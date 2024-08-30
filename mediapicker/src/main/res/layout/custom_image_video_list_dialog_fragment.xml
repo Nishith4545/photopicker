@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintSearch"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/textViewLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Select"
+        android:textColor="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/textViewSubLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="start"
+        android:paddingVertical="8dp"
+        android:text="Select photos &amp;videos to allow only this app. Manage"
+        android:textColor="@color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textViewLabel" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewImagesVideo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/constraintSearch"
+        android:clipToPadding="false"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintBottom_toTopOf="@id/buttonSelect"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textViewSubLabel"
+        app:layout_constraintVertical_bias="0"
+        app:spanCount="2"
+        tools:itemCount="25" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/buttonSelect"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Select"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

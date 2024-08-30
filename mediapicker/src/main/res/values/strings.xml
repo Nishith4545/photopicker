@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">MediaPicker</string>
+    <string name="label_camera">Camera</string>
+    <string name="label_gallery">Gallery</string>
+    <string name="label_select_photos">Select Photos</string>
+    <string name="label_select_photos_to_allow_only_this_app_manage">Select photos to allow only this app. Manage</string>
+    <string name="label_select_videos">Select Videos</string>
+    <string name="label_select_videos_to_allow_only_this_app_manage">Select videos to allow only this app. Manage</string>
+    <string name="label_manage">Manage</string>
+</resources>
