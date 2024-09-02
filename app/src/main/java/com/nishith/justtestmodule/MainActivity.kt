@@ -56,17 +56,17 @@ class MainActivity : BaseActivity() {
                 canSelectMultipleImages: Boolean,
                 canSelectMultipleVideos: Boolean,
                 selectFilter: String,
-                mediapath: String
+                mediaPath: String
             ) {
                 super.onUpdatedStorageMedia(
                     storageAccess,
                     canSelectMultipleImages,
                     canSelectMultipleVideos,
                     selectFilter,
-                    mediapath
+                    mediaPath
                 )
                 imageView.loadImagefromServerAny(
-                    mediapath
+                    mediaPath
                 )
             }
         }, supportFragmentManager)
