@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kapt)
@@ -11,12 +11,8 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.nishith.mediapicker"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-
+        testOptions.targetSdk = 34
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -52,10 +48,8 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-//    testImplementation(libs.testng)
 }
 
-// Allow references to generated code
 kapt {
     correctErrorTypes = true
 }

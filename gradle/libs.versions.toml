@@ -12,6 +12,7 @@ appcompat = "1.7.0"
 material = "1.12.0"
 kotlinPlugin = "1.8.10"
 testng = "6.9.6"
+libraryVersion = "8.6.0"
 [libraries]
 android-image-cropper = { module = "com.theartofdev.edmodo:android-image-cropper", version.ref = "androidImageCropper" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

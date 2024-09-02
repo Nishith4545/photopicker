@@ -24,10 +24,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -35,13 +35,15 @@ import com.nishith.mediapicker.R
 import com.nishith.mediapicker.base.BaseActivity
 import com.nishith.mediapicker.data.FileEntry
 import com.nishith.mediapicker.extention.showToast
+import com.nishith.mediapicker.utils.FileHelperKit
 import com.theartofdev.edmodo.cropper.BuildConfig
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import dagger.hilt.android.qualifiers.ActivityContext
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ActivityScoped
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.text.SimpleDateFormat
@@ -53,7 +55,7 @@ import kotlin.math.roundToInt
 class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivity: BaseActivity) :
     FileSelectorMethods, DefaultLifecycleObserver {
 
-    suspend fun getVisualMedia(
+    private suspend fun getVisualMedia(
         contentResolver: ContentResolver,
         videoOrImageType: String
     ): List<FileEntry> {
@@ -125,6 +127,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
     private var isSelectAnyFile: Boolean = false
     private var isSelectingVideo: Boolean = false
     private var mMediaSelector: MediaSelector? = null
+    private var fragmentManager: FragmentManager? = null
     private var fileForCameraIntent: String = ""
     private var photoFile: File? = null
     private var galleryIntent: Intent? = null
@@ -270,6 +273,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                     else openCamera()
                 } else if (!checkAllPermission(grantResults)) {
                     if (!deniedForever(grantResults)) {
+                        //getCameraPermission()
                         mActivity.showToast("Please allow permission from setting ")
                     }
                 }
@@ -319,9 +323,11 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                         if (isSelectingVideo) {
                             //selectVideoFromGallery(extraMimeTypeVideo)
                             mMediaSelector?.onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
+                            onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
                         } else {
                             //if (selectedDataFromPicker)
                             mMediaSelector?.onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
+                            onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
                         }
                     }
 
@@ -497,12 +503,17 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         canSelectMultipleImages(false)
     }
 
+    private fun getCameraPermission() {
+        activityResultLauncherCamera.launch(cameraPermissionList)
+    }
+
     override fun setLifecycle(lifecycleOwner: LifecycleOwner) {
         lifecycleOwner.lifecycle.addObserver(this)
     }
 
     /*Register This for getting callbacks*/
-    override fun registerCallback(mMediaSelector: MediaSelector) {
+    override fun registerCallback(mMediaSelector: MediaSelector, fragmentManager: FragmentManager) {
+        this.fragmentManager = fragmentManager
         this.mMediaSelector = null
         this.mMediaSelector = mMediaSelector
     }
@@ -571,6 +582,72 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         builder.show()
     }
 
+    private fun onNewImplementedStorageAccordingAccess(
+        storageAccess:String,
+        canSelectMultipleFlag: Boolean,
+        canSelectMultipleVideo: Boolean,
+        imageOrVideo: String
+    ) {
+        if (fragmentManager != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                getVisualMedia(
+                    mActivity.contentResolver,
+                    imageOrVideo
+                ).let {
+                    withContext(Dispatchers.Main) {
+                        fragmentManager?.findFragmentByTag(MEDIA_PICKER).let { j ->
+                            if (j != null) {
+                                if (it.isNotEmpty()) {
+                                    (j as CustomImageVideoListDialogFragment).setItemsAndSetSpan(
+                                        it
+                                    )
+                                }
+                            } else {
+                                var customImageVideoListDialogFragment =
+                                    CustomImageVideoListDialogFragment({
+                                        if (imageOrVideo == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString()) {
+                                            it.map {
+                                                FileHelperKit.getPath(
+                                                    mActivity,
+                                                    it.uri
+                                                )
+                                                    ?.let { new ->
+                                                        mMediaSelector?.onUpdatedStorageMedia(storageAccess,canSelectMultipleFlag,canSelectMultipleVideo,imageOrVideo,new)
+                                                    }
+                                            }
+                                        } else {
+                                            it.map {
+                                                FileHelperKit.getPath(
+                                                    mActivity,
+                                                    it.uri
+                                                )?.let { newPath ->
+                                                    mMediaSelector?.onUpdatedStorageMedia(storageAccess,canSelectMultipleFlag,canSelectMultipleVideo,imageOrVideo,newPath)
+                                                }
+                                            }
+                                        }
+                                    }, mActivity)
+                                customImageVideoListDialogFragment.arguments =
+                                    bundleOf(
+                                        SELECTED_IMAGE_VIDEO_LIST to it,
+                                        CAN_SELECT_MULTIPLE_FLAG to canSelectMultipleFlag,
+                                        CAN_SELECT_MULTIPLE_VIDEO to canSelectMultipleVideo,
+                                        VIDEO_OR_IMAGE to imageOrVideo,
+                                        CROP_AVAILABLE to true
+                                    )
+                                customImageVideoListDialogFragment.setCropAndType(
+                                    isCrop
+                                )
+                                customImageVideoListDialogFragment.show(
+                                    fragmentManager!!,
+                                    MEDIA_PICKER
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private fun checkStoragePermission(){
         if (
@@ -607,9 +684,11 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                 if (isSelectingVideo) {
                     //selectVideoFromGallery(extraMimeTypeVideo)
                     mMediaSelector?.onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
+                    onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
                 } else {
                     //if (selectedDataFromPicker)
                     mMediaSelector?.onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
+                    onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
                 }
             }
 
@@ -668,9 +747,11 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                 if (isSelectingVideo) {
                     //selectVideoFromGallery(extraMimeTypeVideo)
                     mMediaSelector?.onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
+                    onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
                 } else {
                     //if (selectedDataFromPicker)
                     mMediaSelector?.onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
+                    onNewImplementedStorageAccordingAccess("partial",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
                 }
             }
 
@@ -750,6 +831,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                     )
                 } else {
                     mMediaSelector?.onNewImplementedStorageAccordingAccess("Direct",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
+                    onNewImplementedStorageAccordingAccess("Direct",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
                 }
             } else {
                 galleryVideoResult.launch(videoIntent)
@@ -845,7 +927,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         // Continue only if the File was successfully created
         photoFile?.also {
             val photoURI: Uri = FileProvider.getUriForFile(
-                mActivity, "${BuildConfig.APPLICATION_ID}.provider", it
+                mActivity, "${mActivity.packageName}.provider", it
             )
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
             cameraResult.launch(takePictureIntent)
@@ -970,6 +1052,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                     )
                 } else {
                     mMediaSelector?.onNewImplementedStorageAccordingAccess("Direct",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
+                    onNewImplementedStorageAccordingAccess("Direct",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString())
                 }
 
                 //mMediaSelector?.onNewImplementedStorageAccordingAccess("Direct")
@@ -1395,7 +1478,7 @@ enum class FileType {
 interface FileSelectorMethods {
     fun setLifecycle(lifecycleOwner: LifecycleOwner)
     fun showImageMenu(view: View)
-    fun registerCallback(mMediaSelector: MediaSelector)
+    fun registerCallback(mMediaSelector: MediaSelector, fragmentManager: FragmentManager)
     fun selectOptionsForVideoPicker(extraMimeType: Array<String> = arrayOf())
 
     /*Sample
@@ -1426,6 +1509,7 @@ interface FileSelectorMethods {
 
 interface MediaSelector {
     fun onImageUri(uri: Uri) {}
+    fun onUpdatedStorageMedia(storageAccess: String,canSelectMultipleImages:Boolean,canSelectMultipleVideos:Boolean,selectFilter:String,mediapath:String) {}
     fun onVideoUri(uri: Uri) {
     }
 
@@ -1444,5 +1528,4 @@ interface MediaSelector {
     fun onNewImplementedStorageAccordingAccess(storageAccess: String,canSelectMultipleImages:Boolean,canSelectMultipleVideos:Boolean,selectFilter:String) {
 
     }
-
 }

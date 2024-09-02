@@ -1,4 +1,4 @@
-package com.khat.di
+package com.nishith.mediapicker.data.di
 
 object DiConstants {
     const val PLACEHOLDER = "placeholder"

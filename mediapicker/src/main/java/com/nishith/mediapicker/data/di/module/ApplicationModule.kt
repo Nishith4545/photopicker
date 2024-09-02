@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.res.Resources
 import android.os.Build
-import com.khat.di.DiConstants
+import com.nishith.mediapicker.data.di.DiConstants
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
