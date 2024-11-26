@@ -17,14 +17,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.nishith.mediapicker.R
+import com.nishith.mediapicker.cropper.CropImage
+import com.nishith.mediapicker.cropper.CropImageView
 import com.nishith.mediapicker.data.FileEntry
 import com.nishith.mediapicker.databinding.CustomImageVideoListDialogFragmentBinding
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.CAN_SELECT_MULTIPLE_FLAG
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.CAN_SELECT_MULTIPLE_VIDEO
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.SELECTED_IMAGE_VIDEO_LIST
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.VIDEO_OR_IMAGE
-import com.theartofdev.edmodo.cropper.CropImage
-import com.theartofdev.edmodo.cropper.CropImageView
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.FileNotFoundException
 import javax.inject.Inject

@@ -44,7 +44,7 @@ dependencies {
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
-    implementation(libs.android.image.cropper)
+   // implementation(libs.android.image.cropper)
     implementation(libs.glide)
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)

@@ -2,7 +2,11 @@ package com.nishith.justtestmodule
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import com.nishith.justtestmodule.databinding.ActivityMainBinding
 import com.nishith.mediapicker.base.BaseActivity
 import com.nishith.mediapicker.extention.loadImagefromServerAny
@@ -19,8 +23,20 @@ class MainActivity : BaseActivity() {
     @Inject
     lateinit var mediaSelectHelper: MediaSelectHelper
 
+    private var singlePhotoPickerLauncher: ActivityResultLauncher<PickVisualMediaRequest>? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        singlePhotoPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                // Callback is invoked after the user selects a media item or closes the
+                // photo picker.
+                if (uri != null) {
+                    Log.d("PhotoPicker", "Selected URI: $uri")
+                } else {
+                    Log.d("PhotoPicker", "No media selected")
+                }
+            }
         setImagePicker()
         setClickListener()
     }
@@ -32,8 +48,13 @@ class MainActivity : BaseActivity() {
 
     private fun setClickListener() = with(binding) {
         btnLaunchPicker.setOnClickListener {
-            mediaSelectHelper.canSelectMultipleImages(false)
-            mediaSelectHelper.selectOptionsForImagePicker(false)
+            //mediaSelectHelper.canSelectMultipleImages(false)
+            //mediaSelectHelper.selectOptionsForImagePicker(true)
+            singlePhotoPickerLauncher?.launch(
+                PickVisualMediaRequest(
+                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                ))
+
         }
     }
 
