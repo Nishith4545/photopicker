@@ -15,7 +15,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.*
-import android.media.ExifInterface
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -53,7 +52,6 @@ import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
-import kotlin.math.roundToInt
 
 @ActivityScoped
 class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivity: BaseActivity) :
@@ -133,15 +131,15 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
     private val permissionList =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
+                READ_MEDIA_IMAGES,
                 Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
             )
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES
+                READ_MEDIA_IMAGES
             )
         } else {
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+            arrayOf(READ_EXTERNAL_STORAGE)
 
         }
 
@@ -150,15 +148,15 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
     )
 
     private val permissionVideo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
+        arrayOf(READ_MEDIA_VIDEO)
     } else {
-        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        arrayOf(READ_EXTERNAL_STORAGE)
     }
 
     private val permissionVideoCamera = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(Manifest.permission.CAMERA)
     } else {
-        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        arrayOf(READ_EXTERNAL_STORAGE)
     }
 
     object Constant {
@@ -271,7 +269,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                     ContextCompat.checkSelfPermission(
                         mActivity,
                         Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-                    ) == PackageManager.PERMISSION_GRANTED
+                    ) == PERMISSION_GRANTED
                 ) {
                     // Partial access on Android 13+
                     storageAccess = PARTIAL
@@ -280,7 +278,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                     } else {
                         if (isSelectingVideo) {
                             onNewImplementedStorageAccordingAccess(
-                                "partial",
+                                PARTIAL,
                                 canSelectMultipleFlag,
                                 canSelectMultipleVideo,
                                 MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
@@ -288,7 +286,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                             )
                         } else {
                             onNewImplementedStorageAccordingAccess(
-                                "partial",
+                                PARTIAL,
                                 canSelectMultipleFlag,
                                 canSelectMultipleVideo,
                                 MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
@@ -301,12 +299,12 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
                     ContextCompat.checkSelfPermission(
                         mActivity,
-                        Manifest.permission.READ_MEDIA_IMAGES
-                    ) == PackageManager.PERMISSION_GRANTED ||
+                        READ_MEDIA_IMAGES
+                    ) == PERMISSION_GRANTED ||
                     ContextCompat.checkSelfPermission(
                         mActivity,
-                        Manifest.permission.READ_MEDIA_VIDEO
-                    ) == PackageManager.PERMISSION_GRANTED
+                        READ_MEDIA_VIDEO
+                    ) == PERMISSION_GRANTED
                 ) {
                     // Full access on Android 13+
                     storageAccess = FULL
@@ -319,8 +317,8 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
                 } else if (ContextCompat.checkSelfPermission(
                         mActivity,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED
+                        READ_EXTERNAL_STORAGE
+                    ) == PERMISSION_GRANTED
                 ) {
                     storageAccess = FULL
                     //FULL access up to Android 12
@@ -354,24 +352,6 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                     Log.d("PhotoPicker", "No media selected")
                 }
             }
-
-        pickImageLauncher = mActivity.registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == RESULT_OK) {
-                // Handle selected images or videos here
-                val data = result.data
-                val selectedUri = data?.data // Get the URI of the selected image or video
-                selectedUri?.let {
-                    // Use the URI
-                }
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    getVisualMedia(mActivity.contentResolver,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),)
-                }
-            }
-        }
-
 
         anyFilePicker =
             mActivity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
@@ -646,7 +626,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
             ContextCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-            ) == PackageManager.PERMISSION_GRANTED
+            ) == PERMISSION_GRANTED
         ) {
             // Partial access on Android 13+
             storageAccess = PARTIAL
@@ -656,7 +636,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                 if (isSelectingVideo) {
                     //selectVideoFromGallery(extraMimeTypeVideo)
                     onNewImplementedStorageAccordingAccess(
-                        "partial",
+                        PARTIAL,
                         canSelectMultipleFlag,
                         canSelectMultipleVideo,
                         MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
@@ -664,7 +644,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                     )
                 } else {
                     onNewImplementedStorageAccordingAccess(
-                        "partial",
+                        PARTIAL,
                         canSelectMultipleFlag,
                         canSelectMultipleVideo,
                         MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
@@ -676,12 +656,12 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         } else if (
             ContextCompat.checkSelfPermission(
                 mActivity,
-                Manifest.permission.READ_MEDIA_IMAGES
-            ) == PackageManager.PERMISSION_GRANTED ||
+                READ_MEDIA_IMAGES
+            ) == PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(
                 mActivity,
-                Manifest.permission.READ_MEDIA_VIDEO
-            ) == PackageManager.PERMISSION_GRANTED
+                READ_MEDIA_VIDEO
+            ) == PERMISSION_GRANTED
         ) {
             // Full access on Android 13+
             storageAccess = FULL
@@ -694,8 +674,8 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
         } else if (ContextCompat.checkSelfPermission(
                 mActivity,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
+                READ_EXTERNAL_STORAGE
+            ) == PERMISSION_GRANTED
         ) {
             storageAccess = FULL
             // Full access up to Android 12
@@ -716,12 +696,12 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         if (
             ContextCompat.checkSelfPermission(
                 mActivity,
-                Manifest.permission.READ_MEDIA_IMAGES
-            ) == PackageManager.PERMISSION_GRANTED ||
+                READ_MEDIA_IMAGES
+            ) == PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(
                 mActivity,
-                Manifest.permission.READ_MEDIA_VIDEO
-            ) == PackageManager.PERMISSION_GRANTED
+                READ_MEDIA_VIDEO
+            ) == PERMISSION_GRANTED
         ) {
             // Full access on Android 13+
             storageAccess = FULL
@@ -737,7 +717,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
             ContextCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-            ) == PackageManager.PERMISSION_GRANTED
+            ) == PERMISSION_GRANTED
         ) {
             // Partial access on Android 13+
             storageAccess = PARTIAL
@@ -747,7 +727,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                 if (isSelectingVideo) {
                     //selectVideoFromGallery(extraMimeTypeVideo)
                     onNewImplementedStorageAccordingAccess(
-                        "partial",
+                        PARTIAL,
                         canSelectMultipleFlag,
                         canSelectMultipleVideo,
                         MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
@@ -756,7 +736,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                 } else {
                     //if (selectedDataFromPicker)
                     onNewImplementedStorageAccordingAccess(
-                        "partial",
+                        PARTIAL,
                         canSelectMultipleFlag,
                         canSelectMultipleVideo,
                         MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
@@ -767,8 +747,8 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
         } else if (ContextCompat.checkSelfPermission(
                 mActivity,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
+                READ_EXTERNAL_STORAGE
+            ) == PERMISSION_GRANTED
         ) {
             storageAccess = FULL
             // Full access up to Android 12
@@ -808,15 +788,15 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && (ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_MEDIA_VIDEO
-            ) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                mActivity, READ_MEDIA_VIDEO
+            ) != PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
                 mActivity, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-            ) != PackageManager.PERMISSION_GRANTED)
+            ) != PERMISSION_GRANTED)
         ) {
             activityResultLauncherGallery.launch(permissionVideo)
         } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
+                mActivity, READ_EXTERNAL_STORAGE
+            ) != PERMISSION_GRANTED
         ) {
             activityResultLauncherGallery.launch(permissionVideo)
         } else {
@@ -877,13 +857,13 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
+            ) != PERMISSION_GRANTED
         ) {
             activityResultLauncherCamera.launch(cameraPermissionList)
         } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
+            ) != PERMISSION_GRANTED
         ) {
             activityResultLauncherCamera.launch(cameraPermissionList)
         } else {
@@ -918,14 +898,14 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
                 mActivity, Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
+            ) != PERMISSION_GRANTED
         ) {
             activityResultLauncherCamera.launch(permissionVideoCamera)
         } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && (ContextCompat.checkSelfPermission(
                 mActivity, Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED)
+            ) != PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                mActivity, READ_EXTERNAL_STORAGE
+            ) != PERMISSION_GRANTED)
         ) {
             activityResultLauncherCamera.launch(permissionVideoCamera)
         } else {
@@ -956,8 +936,8 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
     override fun openAnyIntent() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
+                mActivity, READ_EXTERNAL_STORAGE
+            ) != PERMISSION_GRANTED
         ) {
             activityResultLauncherGallery.launch(permissionList)
         } else {
@@ -967,8 +947,8 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
     override fun openPdfIntent() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
+                mActivity, READ_EXTERNAL_STORAGE
+            ) != PERMISSION_GRANTED
         ) {
             activityResultLauncherGallery.launch(permissionList)
         } else {
@@ -990,25 +970,25 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         isSelectAnyFile = false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
             && (ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_MEDIA_IMAGES
-            ) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                mActivity, READ_MEDIA_IMAGES
+            ) != PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
                 mActivity, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-            ) != PackageManager.PERMISSION_GRANTED)
+            ) != PERMISSION_GRANTED)
         ) {
             activityResultLauncherGallery.launch(permissionList)
 
         } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU
             && (ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_MEDIA_IMAGES
-            ) != PackageManager.PERMISSION_GRANTED)
+                mActivity, READ_MEDIA_IMAGES
+            ) != PERMISSION_GRANTED)
         ) {
             activityResultLauncherGallery.launch(permissionList)
 
         } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
-                mActivity, Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
+                mActivity, READ_EXTERNAL_STORAGE
+            ) != PERMISSION_GRANTED
         ) {
-            readExternalStorage.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            readExternalStorage.launch(READ_EXTERNAL_STORAGE)
         } else {
             if (isPhotoPickerAvailable()) {
 
@@ -1080,29 +1060,6 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         pickImageLauncher?.launch(intent)
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.R, version = 2)
-    fun checkTest(){
-        if (
-            Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU &&
-            (
-                    ContextCompat.checkSelfPermission(mActivity, READ_MEDIA_IMAGES) == PERMISSION_GRANTED ||
-                            ContextCompat.checkSelfPermission(mActivity, READ_MEDIA_VIDEO) == PERMISSION_GRANTED
-                    )
-        ) {
-            // Full access on Android 13 (API level 33) or higher
-        } else if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-            ContextCompat.checkSelfPermission(mActivity, READ_MEDIA_VISUAL_USER_SELECTED) == PERMISSION_GRANTED
-        ) {
-            openPhotoPicker()
-            // Partial access on Android 14 (API level 34) or higher
-        }  else if (ContextCompat.checkSelfPermission(mActivity, READ_EXTERNAL_STORAGE) == PERMISSION_GRANTED) {
-            // Full access up to Android 12 (API level 32)
-        } else {
-            // Access denied
-        }
-
-    }
     override fun checkSelfStorageAndOpenPhotoPickerWindowForSelection(type: String) {
         storageAccess = PARTIAL
         if (type == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString()) {
@@ -1149,160 +1106,6 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
         return file
     }
 
-
-    private fun compressImage(filePath: String): String {
-        /**
-         * method requires EXTERNAL_STORAGE permission
-         */
-
-        var scaledBitmap: Bitmap? = null
-
-        val options = BitmapFactory.Options()
-
-        //      by setting this field as true, the actual bitmap pixels are not loaded in the memory. Just the bounds are loaded. If
-        //      you try the use the bitmap here, you will get null.
-        options.inJustDecodeBounds = true
-        var bmp = BitmapFactory.decodeFile(filePath, options)
-
-        var actualHeight = options.outHeight
-        var actualWidth = options.outWidth
-
-        //      max Height and width values of the compressed image is taken as 816x612
-
-        val maxHeight = 1920.0f//1280.0f;//816.0f;
-        val maxWidth = 1080.0f//852.0f;//612.0f;
-
-        var imgRatio = (actualWidth / actualHeight).toFloat()
-        val maxRatio = maxWidth / maxHeight
-
-        //      width and height values are set maintaining the aspect ratio of the image
-
-        if (actualHeight > maxHeight || actualWidth > maxWidth) {
-            if (imgRatio < maxRatio) {
-                imgRatio = maxHeight / actualHeight
-                actualWidth = (imgRatio * actualWidth).toInt()
-                actualHeight = maxHeight.toInt()
-            } else if (imgRatio > maxRatio) {
-                imgRatio = maxWidth / actualWidth
-                actualHeight = (imgRatio * actualHeight).toInt()
-                actualWidth = maxWidth.toInt()
-            } else {
-                actualHeight = maxHeight.toInt()
-                actualWidth = maxWidth.toInt()
-
-            }
-        }
-
-        //setting inSampleSize value allows to load a scaled down version of the original image
-
-        options.inSampleSize = calculateInSampleSize(options, actualWidth, actualHeight)
-
-        //inJustDecodeBounds set to false to load the actual bitmap
-        options.inJustDecodeBounds = false
-
-        //this options allow android to claim the bitmap memory if it runs low on memory
-        options.inPurgeable = true
-        options.inInputShareable = true
-        options.inTempStorage = ByteArray(16 * 1024)
-
-        try {
-            //          load the bitmap from its path
-            bmp = BitmapFactory.decodeFile(filePath, options)
-        } catch (exception: OutOfMemoryError) {
-            exception.printStackTrace()
-
-        }
-
-        try {
-            scaledBitmap = Bitmap.createBitmap(actualWidth, actualHeight, Bitmap.Config.ARGB_8888)
-        } catch (exception: OutOfMemoryError) {
-            exception.printStackTrace()
-        }
-
-        val ratioX = actualWidth / options.outWidth.toFloat()
-        val ratioY = actualHeight / options.outHeight.toFloat()
-        val middleX = actualWidth / 2.0f
-        val middleY = actualHeight / 2.0f
-
-        val scaleMatrix = Matrix()
-        scaleMatrix.setScale(ratioX, ratioY, middleX, middleY)
-
-        val canvas = Canvas(scaledBitmap!!)
-        canvas.setMatrix(scaleMatrix)
-        canvas.drawBitmap(
-            bmp, middleX - bmp.width / 2, middleY - bmp.height / 2, Paint(Paint.FILTER_BITMAP_FLAG)
-        )
-
-        //check the rotation of the image and display it properly
-        val exif: ExifInterface
-        try {
-            exif = ExifInterface(filePath)
-
-            val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0)
-            Log.d("EXIF", "Exif: $orientation")
-            val matrix = Matrix()
-            when (orientation) {
-                6 -> {
-                    matrix.postRotate(90f)
-                    Log.d("EXIF", "Exif: $orientation")
-                }
-
-                3 -> {
-                    matrix.postRotate(180f)
-                    Log.d("EXIF", "Exif: $orientation")
-                }
-
-                8 -> {
-                    matrix.postRotate(270f)
-                    Log.d("EXIF", "Exif: $orientation")
-                }
-            }
-            scaledBitmap = Bitmap.createBitmap(
-                scaledBitmap, 0, 0, scaledBitmap.width, scaledBitmap.height, matrix, true
-            )
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        val out: FileOutputStream?
-        val filename = createImageFile().path
-        try {
-            out = FileOutputStream(filename)
-            //          write the compressed bitmap at the destination specified by filename.
-            scaledBitmap!!.compress(Bitmap.CompressFormat.JPEG, 90, out)
-        } catch (e: FileNotFoundException) {
-            e.printStackTrace()
-        }
-
-        return filename
-
-    }
-
-
-    private fun calculateInSampleSize(
-        options: BitmapFactory.Options,
-        reqWidth: Int,
-        reqHeight: Int,
-    ): Int {
-        val height = options.outHeight
-        val width = options.outWidth
-        var inSampleSize = 1
-
-        if (height > reqHeight || width > reqWidth) {
-            val heightRatio = (height.toFloat() / reqHeight.toFloat()).roundToInt()
-            val widthRatio = (width.toFloat() / reqWidth.toFloat()).roundToInt()
-            inSampleSize = if (heightRatio < widthRatio) heightRatio else widthRatio
-        }
-        val totalPixels = (width * height).toFloat()
-        val totalReqPixelsCap = (reqWidth * reqHeight * 2).toFloat()
-        while (totalPixels / (inSampleSize * inSampleSize) > totalReqPixelsCap) {
-            inSampleSize++
-        }
-
-        return inSampleSize
-    }
-
-
     private fun openCropViewOrNot(file: Uri) {
         if (isCrop) {
             val intent: Intent = when (this.cropType) {
@@ -1348,7 +1151,6 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
     @Throws(IOException::class)
     fun createImageFile(): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-//        val storageDir = mActivity.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val image = File.createTempFile(
             timeStamp, /* prefix */
             ".jpg", /* suffix */
@@ -1361,7 +1163,6 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
     @Throws(IOException::class)
     private fun createAnyFile(extension: String): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-//        val storageDir = mActivity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         return File.createTempFile(
             timeStamp, /* prefix */
             extension, /* suffix */
@@ -1454,7 +1255,6 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
 
 
     companion object {
-        private const val ANDROID_R_REQUIRED_EXTENSION_VERSION = 2
         const val SELECTED_IMAGE_VIDEO_LIST = "selectedImagesVideoList"
         const val CAN_SELECT_MULTIPLE_FLAG = "canSelectMultipleFlag"
         const val CAN_SELECT_MULTIPLE_VIDEO = "canSelectMultipleVideo"

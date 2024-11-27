@@ -48,13 +48,8 @@ class MainActivity : BaseActivity() {
 
     private fun setClickListener() = with(binding) {
         btnLaunchPicker.setOnClickListener {
-            //mediaSelectHelper.canSelectMultipleImages(false)
-            //mediaSelectHelper.selectOptionsForImagePicker(true)
-            singlePhotoPickerLauncher?.launch(
-                PickVisualMediaRequest(
-                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                ))
-
+            mediaSelectHelper.canSelectMultipleImages(false)
+            mediaSelectHelper.selectOptionsForImagePicker(true)
         }
     }
 
