@@ -44,7 +44,7 @@ android {
 
 
 dependencies {
-   // implementation(project(":mediapicker"))
+    implementation(project(":mediapicker"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -54,7 +54,7 @@ dependencies {
     kapt(libs.hilt.android.compiler)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("com.github.Nishith4545:mediapicker:v.1.1")
+   // implementation("com.github.Nishith4545:mediapicker:v.1.1")
 }
 // Allow references to generated code
 kapt {
