@@ -22,9 +22,9 @@
         android:id="@+id/imageViewThumb"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-
         android:foregroundGravity="center"
         android:visibility="gone"
+        android:foreground="@drawable/ic_play_video"
         app:layout_constraintBottom_toBottomOf="@id/imageViewPhoto"
         app:layout_constraintEnd_toEndOf="@id/imageViewPhoto"
         app:layout_constraintStart_toStartOf="@id/imageViewPhoto"

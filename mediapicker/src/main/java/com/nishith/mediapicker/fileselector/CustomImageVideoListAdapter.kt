@@ -1,6 +1,5 @@
 package com.nishith.mediapicker.fileselector
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -32,7 +31,7 @@ open class CustomImageVideoListAdapter(
                 .placeholder(R.color.black)
                 .into(imageViewPhoto)
 
-            Log.e("++++Type", item.mimeType)
+            //Log.e("++++Type", item.mimeType)
             if (item.mimeType == "video/mp4") {
                 imageViewThumb.show()
             } else {

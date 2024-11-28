@@ -2,7 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/constraintSearch"
+    android:id="@+id/constraintRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -11,23 +11,57 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Select"
+        android:layout_marginTop="10dp"
+        android:text="@string/label_select"
+        android:textSize="18sp"
         android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/textViewSubLabel"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutManage"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="start"
-        android:paddingVertical="8dp"
-        android:text="Select photos &amp;videos to allow only this app. Manage"
-        android:textColor="@color/black"
+        android:layout_marginTop="@dimen/_10sdp"
         app:layout_constraintEnd_toEndOf="parent"
+        android:background="@drawable/bg_round_rect_50_white"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewLabel" />
+        app:layout_constraintTop_toBottomOf="@id/textViewLabel">
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/textViewSubLabel"
+            android:layout_width="wrap_content"
+            app:layout_constrainedWidth="true"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:padding="@dimen/_10sdp"
+            android:lineSpacingExtra="@dimen/_5sdp"
+            android:paddingVertical="8dp"
+            android:text="@string/label_select_photos_amp_videos_to_allow_only_this_app_manage"
+            android:textColor="@color/white"
+            app:layout_constraintEnd_toStartOf="@id/textViewManage"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/textViewManage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:padding="@dimen/_10sdp"
+            android:paddingVertical="8dp"
+            android:background="@drawable/bg_round_rect_manage_white"
+            android:text="@string/label_manage"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/textViewSubLabel"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewImagesVideo"
@@ -35,12 +69,13 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/constraintSearch"
         android:clipToPadding="false"
+        android:layout_marginTop="@dimen/_10sdp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:layout_constrainedHeight="true"
         app:layout_constraintBottom_toTopOf="@id/buttonSelect"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewSubLabel"
+        app:layout_constraintTop_toBottomOf="@id/layoutManage"
         app:layout_constraintVertical_bias="0"
         app:spanCount="2"
         tools:itemCount="25" />
@@ -49,7 +84,10 @@
         android:id="@+id/buttonSelect"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Select"
+        style="@style/PrimaryButtonStyle"
+        android:layout_marginHorizontal="@dimen/_10sdp"
+        android:layout_marginBottom="@dimen/_10sdp"
+        android:text="@string/label_select"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

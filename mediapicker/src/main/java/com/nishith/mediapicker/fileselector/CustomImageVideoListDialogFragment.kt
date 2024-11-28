@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -78,6 +79,12 @@ class CustomImageVideoListDialogFragment(
 
     private var selectedImage: FileEntry? = null
 
+    private var limitedAccessBackgroundColor = R.color.colorBg
+
+    fun setLimitedAccessLayoutBackgroundColor(color : Int){
+        limitedAccessBackgroundColor = color
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -139,14 +146,13 @@ class CustomImageVideoListDialogFragment(
     }
 
     private fun init() = with(binding) {
+        constraintRoot.setBackgroundColor(ContextCompat.getColor(requireContext(),limitedAccessBackgroundColor))
         if (imageVideoString == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString()) {
             textViewLabel.text = getString(R.string.label_select_photos)
-            textViewSubLabel.text =
-                getString(R.string.label_select_photos_to_allow_only_this_app_manage)
+            //textViewSubLabel.text = getString(R.string.label_select_photos_to_allow_only_this_app_manage)
         } else {
             textViewLabel.text = getString(R.string.label_select_videos)
-            textViewSubLabel.text =
-                getString(R.string.label_select_videos_to_allow_only_this_app_manage)
+            //textViewSubLabel.text = getString(R.string.label_select_videos_to_allow_only_this_app_manage)
         }
     }
 
@@ -198,7 +204,7 @@ class CustomImageVideoListDialogFragment(
             }
         }
 
-        textViewSubLabel.setOnClickListener {
+        textViewManage.setOnClickListener {
             imageVideoString?.let { it1 ->
                 mediaSelectHelper.checkSelfStorageAndOpenPhotoPickerWindowForSelection(
                     it1

@@ -12,6 +12,7 @@ import com.nishith.mediapicker.base.BaseActivity
 import com.nishith.mediapicker.extention.loadImagefromServerAny
 import com.nishith.mediapicker.fileselector.MediaSelectHelper
 import com.nishith.mediapicker.fileselector.MediaSelector
+import com.nishith.mediapicker.utils.FileHelperKit.getPath
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -50,11 +51,22 @@ class MainActivity : BaseActivity() {
         btnLaunchPicker.setOnClickListener {
             mediaSelectHelper.canSelectMultipleImages(false)
             mediaSelectHelper.selectOptionsForImagePicker(true)
+
+            //mediaSelectHelper.canSelectMultipleVideo(false)
+            //mediaSelectHelper.selectOptionsForVideoPicker()
+            //mediaSelectHelper.setLimitedAccessLayoutBackgroundColor(R.color.teal_200)
         }
     }
 
     private fun setImagePicker() = with(binding) {
         mediaSelectHelper.registerCallback(object : MediaSelector {
+            override fun onVideoUri(uri: Uri) {
+                super.onVideoUri(uri)
+                getPath(this@MainActivity, uri)?.let { it1 ->
+                    imageView.loadImagefromServerAny(it1)
+                }
+            }
+
             override fun onImageUri(uri: Uri) {
                 uri.path?.let {
                     imageView.loadImagefromServerAny(it)
