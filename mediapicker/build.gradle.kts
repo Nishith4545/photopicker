@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kapt)
     alias(libs.plugins.hilt)
+    id("maven-publish")
 }
 
 android {
