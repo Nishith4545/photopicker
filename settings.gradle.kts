@@ -1,6 +1,5 @@
 pluginManagement {
     repositories {
-        jcenter()
         maven ("https://maven.aliyun.com/repository/central")
         maven ( "https://maven.aliyun.com/repository/google")
         google {
@@ -18,7 +17,6 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
 }
