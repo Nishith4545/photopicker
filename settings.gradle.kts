@@ -23,6 +23,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "JustTestModule"
+rootProject.name = "MediaPicker"
 include(":app")
 include(":mediapicker")
