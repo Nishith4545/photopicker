@@ -1,5 +1,11 @@
 # Mediapicker Module for Android
 
+<div style="display: flex; justify-content: space-between;">
+<img src="image_2024_11_28T10_43_23_770Z.png" alt="MediaPicker Screenshot" width="250"/>
+<img src="image_2024_11_28T10_44_04_760Z.png" alt="MediaPicker Screenshot" width="250"/>
+<img src="image_2024_11_28T10_45_10_636Z.png" alt="MediaPicker Screenshot" width="250"/>
+</div>
+
 ### Installation
 
 To integrate the **Mediapicker** module into your Android project, follow these steps:
