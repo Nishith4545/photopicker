@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kapt)
     alias(libs.plugins.hilt)
+    id("maven-publish")
+
 }
 
 android {
@@ -40,6 +42,7 @@ android {
     }
 }
 
+
 dependencies {
    // implementation(project(":mediapicker"))
     implementation(libs.androidx.core.ktx)
@@ -51,7 +54,7 @@ dependencies {
     kapt(libs.hilt.android.compiler)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("com.github.Nishith4545:mediapicker:v.1.0")
+    implementation("com.github.Nishith4545:mediapicker:v.1.1")
 }
 // Allow references to generated code
 kapt {
