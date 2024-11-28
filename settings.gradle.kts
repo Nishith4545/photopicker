@@ -18,9 +18,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven(url = uri("https://jitpack.io"))
     }
 }
 
 rootProject.name = "MediaPicker"
 include(":app")
-include(":mediapicker")
+//include(":mediapicker")
