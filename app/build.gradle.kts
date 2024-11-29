@@ -54,7 +54,7 @@ dependencies {
     kapt(libs.hilt.android.compiler)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    //implementation("com.github.Nishith4545:mediapicker:1.0.1")
+    implementation("com.github.Nishith4545:mediapicker:1.0.1")
 }
 // Allow references to generated code
 kapt {
