@@ -4,6 +4,8 @@
 <img src="image_2024_11_28T10_43_23_770Z.png" alt="MediaPicker Screenshot" width="250"/>
 <img src="image_2024_11_28T10_44_04_760Z.png" alt="MediaPicker Screenshot" width="250"/>
 <img src="image_2024_11_28T10_45_10_636Z.png" alt="MediaPicker Screenshot" width="250"/>
+<img src="image_2024_11_29T06_49_35_406Z.png" alt="MediaPicker Screenshot" width="250"/>
+
 </div>
 
 ### Installation
