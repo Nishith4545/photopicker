@@ -1,7 +1,5 @@
 pluginManagement {
     repositories {
-        //maven ("https://maven.aliyun.com/repository/central")
-        //maven ( "https://maven.aliyun.com/repository/google")
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
