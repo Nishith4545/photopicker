@@ -1,4 +1,3 @@
-/*
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -64,16 +63,20 @@ dependencies {
 
 kapt {
     correctErrorTypes = true
-}*/
+}
 
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-parcelize'
-apply plugin: 'kotlin-kapt'
-apply plugin: 'dagger.hilt.android.plugin'
+/*plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.dagger.hilt.android'
+    id 'maven-publish'
+}
 
 android {
     compileSdkVersion 34
+    namespace "com.nishith.mediapicker"
 
     defaultConfig {
         minSdkVersion 23
@@ -87,8 +90,16 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+            )
         }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
@@ -101,7 +112,7 @@ android {
         }
     }
     buildFeatures {
-        viewBinding= true
+        viewBinding = true
     }
 }
 
@@ -125,4 +136,4 @@ dependencies {
     // Optional: AndroidX JUnit for instrumented tests
     androidTestImplementation "androidx.test.ext:junit:1.2.1"
 
-}
+}*/

@@ -1,22 +1,22 @@
-/*plugins {
+plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kapt)
     alias(libs.plugins.hilt)
     id("maven-publish")
 
-}*/
+}
 
-plugins {
+/*plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'kotlin-kapt'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.dagger.hilt.android'
     id("maven-publish")
-}
+}*/
 
-/*android {
+android {
     namespace = "com.nishith.justtestmodule"
     compileSdk = 34
 
@@ -49,9 +49,9 @@ plugins {
     buildFeatures {
         viewBinding= true
     }
-}*/
+}
 
-android {
+/*android {
     namespace = "com.nishith.justtestmodule"
     compileSdk 34
     defaultConfig {
@@ -65,8 +65,10 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+            )
         }
     }
 
@@ -88,14 +90,14 @@ android {
 dependencies {
     implementation(project(":mediapicker"))
 
-    /*implementation(libs.androidx.core.ktx)
+    *//*implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-    androidTestImplementation(libs.androidx.espresso.core)*/
+    androidTestImplementation(libs.androidx.espresso.core)*//*
 
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -123,8 +125,22 @@ dependencies {
 
 
     //implementation("com.github.Nishith4545:mediapicker:1.0.1")
-}
+}*/
 // Allow references to generated code
+
+dependencies {
+    implementation(project(":mediapicker"))
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
+    androidTestImplementation(libs.androidx.espresso.core)
+
+    //implementation("com.github.Nishith4545:mediapicker:1.0.1")
+}
 kapt {
-    correctErrorTypes true
+    correctErrorTypes = true
 }

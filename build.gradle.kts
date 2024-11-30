@@ -1,5 +1,4 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-/*
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
@@ -7,15 +6,4 @@ plugins {
     alias(libs.plugins.kotlin.parcelize) apply false
     alias(libs.plugins.kapt) apply false
     alias(libs.plugins.hilt) apply false
-}*/
-
-plugins {
-    id 'com.android.application' version '7.1.3' apply false
-    id 'com.android.library' version '7.1.3' apply false
-    id 'org.jetbrains.kotlin.android' version '1.8.0' apply false
-    id 'com.google.dagger.hilt.android' version '2.44' apply false
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }
