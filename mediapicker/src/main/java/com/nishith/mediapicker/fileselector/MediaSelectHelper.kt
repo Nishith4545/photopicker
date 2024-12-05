@@ -26,6 +26,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -34,7 +35,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.nishith.mediapicker.R
-import com.nishith.mediapicker.base.BaseActivity
 import com.nishith.mediapicker.cropper.CropImage
 import com.nishith.mediapicker.cropper.CropImageView
 import com.nishith.mediapicker.data.FileEntry
@@ -48,9 +48,7 @@ import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-
-class MediaSelectHelper (private var mActivity: BaseActivity) :
+class MediaSelectHelper (private var mActivity: AppCompatActivity) :
     FileSelectorMethods, DefaultLifecycleObserver {
 
     private suspend fun getVisualMedia(
