@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.MediaStore.Audio.Media
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.nishith.mediapicker.R
+import com.nishith.mediapicker.base.BaseActivity
 import com.nishith.mediapicker.cropper.CropImage
 import com.nishith.mediapicker.cropper.CropImageView
 import com.nishith.mediapicker.data.FileEntry
@@ -26,15 +28,21 @@ import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.CAN_SELE
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.CAN_SELECT_MULTIPLE_VIDEO
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.SELECTED_IMAGE_VIDEO_LIST
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.VIDEO_OR_IMAGE
-import dagger.hilt.android.AndroidEntryPoint
 import java.io.FileNotFoundException
-import javax.inject.Inject
 
-@AndroidEntryPoint
+import kotlin.text.Typography.dagger
+
 class CustomImageVideoListDialogFragment(
     private val onEventListener: (imageList: ArrayList<FileEntry>) -> Unit,
-    private val mActivity: FragmentActivity
+    private val mActivity: FragmentActivity,
+    private val helperContext:MediaSelectHelper
 ) : BottomSheetDialogFragment() {
+
+    private var mediaSelectHelper: MediaSelectHelper
+
+     init {
+        mediaSelectHelper = helperContext
+    }
 
     private var _binding: CustomImageVideoListDialogFragmentBinding? = null
 
@@ -42,8 +50,7 @@ class CustomImageVideoListDialogFragment(
 
     private var cropResult: ActivityResultLauncher<Intent>? = null
 
-    @Inject
-    lateinit var mediaSelectHelper: MediaSelectHelper
+
 
     private val imageVideoList by lazy {
         arguments?.getParcelableArrayList<FileEntry>(SELECTED_IMAGE_VIDEO_LIST)
@@ -87,7 +94,6 @@ class CustomImageVideoListDialogFragment(
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         cropResult =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { data: ActivityResult ->
                 if (data.resultCode == RESULT_OK) {

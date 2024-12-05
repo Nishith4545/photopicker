@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kapt)
-    alias(libs.plugins.hilt)
+    //alias(libs.plugins.hilt)
     id("maven-publish")
 }
 
@@ -57,8 +57,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
    // implementation(libs.android.image.cropper)
     implementation(libs.glide)
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.android.compiler)
+    //implementation(libs.hilt.android)
+    //kapt(libs.hilt.android.compiler)
 }
 
 kapt {

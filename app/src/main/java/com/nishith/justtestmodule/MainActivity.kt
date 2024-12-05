@@ -13,21 +13,18 @@ import com.nishith.mediapicker.extention.loadImagefromServerAny
 import com.nishith.mediapicker.fileselector.MediaSelectHelper
 import com.nishith.mediapicker.fileselector.MediaSelector
 import com.nishith.mediapicker.utils.FileHelperKit.getPath
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class MainActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    @Inject
     lateinit var mediaSelectHelper: MediaSelectHelper
 
     private var singlePhotoPickerLauncher: ActivityResultLauncher<PickVisualMediaRequest>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mediaSelectHelper = MediaSelectHelper(this)
         singlePhotoPickerLauncher =
             registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
                 // Callback is invoked after the user selects a media item or closes the

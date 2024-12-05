@@ -40,8 +40,6 @@ import com.nishith.mediapicker.cropper.CropImageView
 import com.nishith.mediapicker.data.FileEntry
 import com.nishith.mediapicker.extention.showToast
 import com.nishith.mediapicker.utils.FileHelperKit
-import dagger.hilt.android.qualifiers.ActivityContext
-import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,10 +47,10 @@ import kotlinx.coroutines.withContext
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
-import javax.inject.Inject
 
-@ActivityScoped
-class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivity: BaseActivity) :
+
+
+class MediaSelectHelper (private var mActivity: BaseActivity) :
     FileSelectorMethods, DefaultLifecycleObserver {
 
     private suspend fun getVisualMedia(
@@ -616,7 +614,7 @@ class MediaSelectHelper @Inject constructor(@ActivityContext private var mActivi
                                                 }
                                             }
                                         }
-                                    }, mActivity)
+                                    }, mActivity,this@MediaSelectHelper)
                                 customImageVideoListDialogFragment.arguments =
                                     bundleOf(
                                         SELECTED_IMAGE_VIDEO_LIST to it,
