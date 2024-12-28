@@ -63,13 +63,13 @@ mediaSelectHelper.selectOptionsForVideoPicker() // Enable video picker options
 ```
 
 #### Step 3(Optional): Customize Limited Access Screen
-Use the callback function to retrieve selected media (image/video):
+To change the background color of the limited access media screen:
 ```kotlin
 mediaSelectHelper.setLimitedAccessLayoutBackgroundColor(R.color.teal_200)
 ```
 
 #### Step 4: Register Callbacks to Handle Selected Media
-To change the background color of the limited access media screen:
+Use the callback function to retrieve selected media (image/video):
 ```kotlin
 private fun setImagePicker() = with(binding) {
     mediaSelectHelper.registerCallback(object : MediaSelector {
