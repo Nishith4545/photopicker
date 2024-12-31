@@ -16,7 +16,8 @@ To integrate the **Mediapicker** module into your Android project, follow these 
 
    ```gradle
    dependencies {
-       implementation 'com.github.Nishith4545:MediaPicker:1.0.8'
+       //use latest version
+       implementation 'com.github.Nishith4545:MediaPicker:x.x.x'
    }
    
 The **Mediapicker Module** is a Kotlin-based Android library designed to simplify media selection in your apps. It automatically handles permissions related to media access and eliminates the need to manually declare them in your app's `AndroidManifest.xml`. Additionally, it supports **Android 14's Limited Access** feature, allowing users to grant access to specific photos and videos instead of all media files on their device.
