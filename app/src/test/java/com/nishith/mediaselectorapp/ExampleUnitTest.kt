@@ -1,4 +1,4 @@
-package com.nishith.justtestmodule
+package com.nishith.mediaselectorapp
 
 import org.junit.Test
 

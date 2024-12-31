@@ -1,4 +1,4 @@
-package com.nishith.justtestmodule
+package com.nishith.mediaselectorapp
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

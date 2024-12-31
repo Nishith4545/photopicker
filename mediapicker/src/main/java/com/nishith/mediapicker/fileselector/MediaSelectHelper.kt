@@ -235,15 +235,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         cameraResult =
             mActivity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
                 if (result.resultCode == RESULT_OK) {
-                    //Log.e("++++cam_video", "RESULT_OK")
                     mMediaSelector?.onCameraVideoUri(Uri.fromFile(File(fileForCameraIntent)))
-                    /*if (isSelectingVideo) {
-                        mMediaSelector?.onCameraVideoUri(Uri.fromFile(File(fileForCameraIntent)))
-                    } else {*//*compressImage(fileForCameraIntent).apply {
-                            openCropViewOrNot(Uri.fromFile(File(this)))
-                        }*//*
-                        openCropViewOrNot(Uri.fromFile(File(fileForCameraIntent)))
-                    }*/
                 } else {
                     //Log.e("++++cam_video", result.resultCode.toString())
                 }
@@ -270,8 +262,6 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
 
         activityResultLauncherGallery =
             mActivity.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-                //   if (checkAllPermission(grantResults)) {
-
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     ContextCompat.checkSelfPermission(
@@ -474,9 +464,11 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
             mActivity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { data: ActivityResult ->
                 if (data.resultCode == RESULT_OK) {
                     val result = CropImage.getActivityResult(data.data)
-                    val resultUri = result.uri
+                    val resultUri = result?.uri
                     try {
-                        mMediaSelector?.onImageUri(resultUri)
+                        if (resultUri != null) {
+                            mMediaSelector?.onImageUri(resultUri)
+                        }
                     } catch (e: FileNotFoundException) {
                         e.printStackTrace()
                     }
@@ -780,6 +772,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
     override fun selectOptionsForVideoPicker(extraMimeType: Array<String>) {
         isSelectAnyFile = false
         isSelectingVideo = true
+        this.isCrop = false
         AlertDialog.Builder(mActivity).setTitle("Choose Video Source").setItems(
             arrayOf(
             mActivity.resources?.getString(R.string.label_camera),

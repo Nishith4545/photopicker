@@ -98,9 +98,11 @@ class CustomImageVideoListDialogFragment(
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { data: ActivityResult ->
                 if (data.resultCode == RESULT_OK) {
                     val result = CropImage.getActivityResult(data.data)
-                    val resultUri = result.uri
+                    val resultUri = result?.uri
                     try {
-                        selectedImage?.uri = resultUri
+                        if (resultUri != null) {
+                            selectedImage?.uri = resultUri
+                        }
                         onEventListener.invoke(arrayListOf(selectedImage!!))
                         dismissAllowingStateLoss()
                     } catch (e: FileNotFoundException) {

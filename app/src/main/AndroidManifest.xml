@@ -2,8 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <application
-        android:name=".MainApp"
         android:allowBackup="false"
         tools:replace="android:allowBackup"
         tools:ignore="DataExtractionRules"
@@ -11,11 +13,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.JustTestModule"
+        android:theme="@style/Theme.mediaselectorapp"
         tools:targetApi="34" >
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.nishith.mediaselectorapp.MainActivity"
             android:screenOrientation="portrait"
             android:configChanges="orientation|screenSize"
             android:exported="true">
