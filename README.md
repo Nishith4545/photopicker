@@ -29,7 +29,7 @@ The **Mediapicker Module** is a Kotlin-based Android library designed to simplif
    - No need to manually declare permissions in your app's `AndroidManifest.xml`. The module handles everything internally.
    - Permissions are requested at runtime only when required, ensuring better security and compliance with Android's privacy policies.
 
-### 2. **Support for Android 14's Limited Access Feature**
+### 2. **Support for Android 14's Limited Access Feature (Allow Limited Access)**
    - Fully supports **Android 14 (API level 34)** and its new **Limited Access to Photos and Videos** feature.
    - Users can select specific photos or videos to share with your app, providing better privacy controls.
    - The module ensures seamless handling of these restricted permissions on Android 14 and above, with no additional setup required from the developer.
