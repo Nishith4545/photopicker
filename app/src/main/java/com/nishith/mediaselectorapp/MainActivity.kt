@@ -11,6 +11,7 @@ import com.nishith.mediapicker.extention.hide
 import com.nishith.mediapicker.extention.loadImagefromServerAny
 import com.nishith.mediapicker.extention.show
 import com.nishith.mediapicker.fileselector.MediaSelectHelper
+import com.nishith.mediapicker.fileselector.MediaSelectHelper.Constant.CROP_SQUARE
 import com.nishith.mediapicker.fileselector.MediaSelector
 import com.nishith.mediapicker.utils.FileHelperKit.getPath
 import com.nishith.mediaselectorapp.databinding.ActivityMainBinding
@@ -45,13 +46,15 @@ class MainActivity : BaseActivity() {
 
     private fun setClickListener() = with(binding) {
         btnLaunchPicker.setOnClickListener {
-            mediaSelectHelper.canSelectMultipleImages(false)
-            mediaSelectHelper.selectOptionsForImagePicker(true)
+            //mediaSelectHelper.canSelectMultipleImages(false)
+            //mediaSelectHelper.selectOptionsForImagePicker(true)
+            mediaSelectHelper.openCameraPictureIntent(true,CROP_SQUARE)
         }
 
         btnLaunchVideoPicker.setOnClickListener {
-            mediaSelectHelper.canSelectMultipleVideo(false)
-            mediaSelectHelper.selectOptionsForVideoPicker()
+            //mediaSelectHelper.canSelectMultipleVideo(false)
+            //mediaSelectHelper.selectOptionsForVideoPicker()
+            mediaSelectHelper.openCameraVideoIntent()
         }
     }
 

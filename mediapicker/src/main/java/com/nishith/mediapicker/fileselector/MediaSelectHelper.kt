@@ -235,9 +235,13 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         cameraResult =
             mActivity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
                 if (result.resultCode == RESULT_OK) {
-                    mMediaSelector?.onCameraVideoUri(Uri.fromFile(File(fileForCameraIntent)))
-                } else {
-                    //Log.e("++++cam_video", result.resultCode.toString())
+                    if (isSelectingVideo) {
+                        mMediaSelector?.onCameraVideoUri(Uri.fromFile(File(fileForCameraIntent)))
+                    } else {/*compressImage(fileForCameraIntent).apply {
+                            openCropViewOrNot(Uri.fromFile(File(this)))
+                        }*/
+                        openCropViewOrNot(Uri.fromFile(File(fileForCameraIntent)))
+                    }
                 }
             }
 
@@ -787,6 +791,21 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         }.show()
     }
 
+    override fun openCameraPictureIntent(isCrop1: Boolean, cropType: String) {
+        this.cropType = cropType
+        this.isCrop = isCrop1
+        isSelectingVideo = false
+        isSelectAnyFile = false
+        openCamera()
+    }
+
+    override fun openCameraVideoIntent() {
+        isSelectAnyFile = false
+        isSelectingVideo = true
+        this.isCrop = false
+        dispatchTakeVideoIntent()
+    }
+
     override fun selectVideoFromGallery(extraMimeType: Array<String>) {
         extraMimeTypeVideo = extraMimeType
         canSelectMultipleVideo(canSelectMultipleVideo, extraMimeType)
@@ -1298,6 +1317,8 @@ interface FileSelectorMethods {
     fun canSelectMultipleImages(canSelect: Boolean)
     fun canSelectMultipleVideo(canSelect: Boolean, extraMimeType: Array<String> = arrayOf())
     fun openAnyIntent()
+    fun openCameraPictureIntent(isCrop1: Boolean, cropType: String)
+    fun openCameraVideoIntent()
     fun openPdfIntent()
     fun getThumbnailFromVideo(uri: Uri): File
     fun checkSelfStorageAndOpenPhotoPickerWindowForSelection(type: String) {
