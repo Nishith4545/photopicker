@@ -11,10 +11,11 @@ import com.nishith.mediapicker.extention.hide
 import com.nishith.mediapicker.extention.loadImagefromServerAny
 import com.nishith.mediapicker.extention.show
 import com.nishith.mediapicker.fileselector.MediaSelectHelper
-import com.nishith.mediapicker.fileselector.MediaSelectHelper.Constant.CROP_SQUARE
 import com.nishith.mediapicker.fileselector.MediaSelector
+import com.nishith.mediapicker.fileselector.OutPutFileAny
 import com.nishith.mediapicker.utils.FileHelperKit.getPath
 import com.nishith.mediaselectorapp.databinding.ActivityMainBinding
+import java.util.ArrayList
 
 
 class MainActivity : BaseActivity() {
@@ -46,15 +47,15 @@ class MainActivity : BaseActivity() {
 
     private fun setClickListener() = with(binding) {
         btnLaunchPicker.setOnClickListener {
-            //mediaSelectHelper.canSelectMultipleImages(false)
-            //mediaSelectHelper.selectOptionsForImagePicker(true)
-            mediaSelectHelper.openCameraPictureIntent(true,CROP_SQUARE)
+            mediaSelectHelper.canSelectMultipleImages(false)
+            mediaSelectHelper.selectOptionsForImagePicker(true)
+            //mediaSelectHelper.openCameraPictureIntent(true,CROP_SQUARE)
         }
 
         btnLaunchVideoPicker.setOnClickListener {
-            //mediaSelectHelper.canSelectMultipleVideo(false)
-            //mediaSelectHelper.selectOptionsForVideoPicker()
-            mediaSelectHelper.openCameraVideoIntent()
+            mediaSelectHelper.canSelectMultipleVideo(false)
+            mediaSelectHelper.selectOptionsForVideoPicker()
+            //mediaSelectHelper.openCameraVideoIntent()
         }
     }
 
@@ -62,9 +63,7 @@ class MainActivity : BaseActivity() {
         mediaSelectHelper.registerCallback(object : MediaSelector {
             override fun onVideoUri(uri: Uri) {
                 super.onVideoUri(uri)
-
                 getPath(this@MainActivity, uri)?.let { it1 ->
-
                     playerView.show()
                     imageView.hide()
                     setUpVideoUrl(uri)
@@ -113,6 +112,19 @@ class MainActivity : BaseActivity() {
                 }
 
             }
+
+            override fun onImageUriList(uriArrayList: ArrayList<Uri>) {
+                    super.onImageUriList(uriArrayList)
+            }
+
+            override fun onVideoURIList(uriArrayList: ArrayList<Uri>) {
+                super.onVideoURIList(uriArrayList)
+            }
+
+            override fun onAnyFileSelected(outPutFileAny: OutPutFileAny) {
+                super.onAnyFileSelected(outPutFileAny)
+            }
+
         }, supportFragmentManager)
     }
 

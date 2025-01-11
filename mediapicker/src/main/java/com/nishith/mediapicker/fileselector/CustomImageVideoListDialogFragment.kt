@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.provider.MediaStore.Audio.Media
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,28 +18,30 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.nishith.mediapicker.R
-import com.nishith.mediapicker.base.BaseActivity
 import com.nishith.mediapicker.cropper.CropImage
 import com.nishith.mediapicker.cropper.CropImageView
 import com.nishith.mediapicker.data.FileEntry
 import com.nishith.mediapicker.databinding.CustomImageVideoListDialogFragmentBinding
+import com.nishith.mediapicker.extention.hide
+import com.nishith.mediapicker.extention.show
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.CAN_SELECT_MULTIPLE_FLAG
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.CAN_SELECT_MULTIPLE_VIDEO
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.SELECTED_IMAGE_VIDEO_LIST
 import com.nishith.mediapicker.fileselector.MediaSelectHelper.Companion.VIDEO_OR_IMAGE
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
-
-import kotlin.text.Typography.dagger
 
 class CustomImageVideoListDialogFragment(
     private val onEventListener: (imageList: ArrayList<FileEntry>) -> Unit,
     private val mActivity: FragmentActivity,
-    private val helperContext:MediaSelectHelper
+    helperContext: MediaSelectHelper
 ) : BottomSheetDialogFragment() {
 
     private var mediaSelectHelper: MediaSelectHelper
 
-     init {
+    init {
         mediaSelectHelper = helperContext
     }
 
@@ -49,8 +50,6 @@ class CustomImageVideoListDialogFragment(
     private val binding get() = _binding!!
 
     private var cropResult: ActivityResultLauncher<Intent>? = null
-
-
 
     private val imageVideoList by lazy {
         arguments?.getParcelableArrayList<FileEntry>(SELECTED_IMAGE_VIDEO_LIST)
@@ -88,7 +87,7 @@ class CustomImageVideoListDialogFragment(
 
     private var limitedAccessBackgroundColor = R.color.colorBg
 
-    fun setLimitedAccessLayoutBackgroundColor(color : Int){
+    fun setLimitedAccessLayoutBackgroundColor(color: Int) {
         limitedAccessBackgroundColor = color
     }
 
@@ -154,7 +153,12 @@ class CustomImageVideoListDialogFragment(
     }
 
     private fun init() = with(binding) {
-        constraintRoot.setBackgroundColor(ContextCompat.getColor(requireContext(),limitedAccessBackgroundColor))
+        constraintRoot.setBackgroundColor(
+            ContextCompat.getColor(
+                requireContext(),
+                limitedAccessBackgroundColor
+            )
+        )
         if (imageVideoString == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString()) {
             textViewLabel.text = getString(R.string.label_select_photos)
             //textViewSubLabel.text = getString(R.string.label_select_photos_to_allow_only_this_app_manage)
@@ -182,11 +186,11 @@ class CustomImageVideoListDialogFragment(
     }
 
     private fun setListeners() = with(binding) {
-        /*customImageVideoListAdapter.setOnItemClickListener {
-            buttonSelect.show()
-        }*/
-
         buttonSelect.setOnClickListener {
+            requireActivity().runOnUiThread {
+                progressCircular.show()
+            }
+
             if ((customImageVideoListAdapter?.getItems()
                     ?.filter { data -> data.isImageSelected } as ArrayList<FileEntry>).isEmpty()
             ) {
@@ -202,12 +206,49 @@ class CustomImageVideoListDialogFragment(
                         openCropViewOrNot(
                             it1.uri
                         )
+                        progressCircular.hide()
                     }
                 } else {
-                    onEventListener.invoke(
-                        customImageVideoListAdapter?.getItems()
-                            ?.filter { data -> data.isImageSelected } as ArrayList<FileEntry>)
-                    dismissAllowingStateLoss()
+                    customImageVideoListAdapter?.getItems()
+                        ?.filter { data -> data.isImageSelected }?.let { mediaList ->
+                            if (mediaList.isNotEmpty()) {
+                                var isFileTooLarge = false
+                                // Check file size for each selected URI
+                                for (mediaListData in mediaList) {
+                                    val fileSize =
+                                        mediaSelectHelper.getFileSize(mediaListData.uri)
+                                    if (fileSize > mediaSelectHelper.MAX_FILE_SIZE) {
+                                        isFileTooLarge = true
+                                        break // No need to check further if we found a large file
+                                    }
+                                }
+                                if (isFileTooLarge) {
+                                    if (canSelectMultipleFlag == true) {
+                                        progressCircular.hide()
+                                        Toast.makeText(
+                                            requireContext(),
+                                            "One or more files are too large. Please select smaller files.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    } else {
+                                        progressCircular.hide()
+                                        Toast.makeText(
+                                            requireContext(),
+                                            "The selected file is too large. Please select a smaller video.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                } else {
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        onEventListener.invoke(
+                                            mediaList as ArrayList<FileEntry>
+                                        )
+
+                                        dismissAllowingStateLoss()
+                                    }
+                                }
+                            }
+                        }
                 }
             }
         }

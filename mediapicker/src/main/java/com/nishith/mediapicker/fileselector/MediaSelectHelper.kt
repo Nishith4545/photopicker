@@ -18,16 +18,15 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
-import android.view.View
+import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
+import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
@@ -48,7 +47,8 @@ import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MediaSelectHelper (private var mActivity: AppCompatActivity) :
+
+class MediaSelectHelper(private var mActivity: AppCompatActivity) :
     FileSelectorMethods, DefaultLifecycleObserver {
 
     private suspend fun getVisualMedia(
@@ -101,7 +101,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                     val mimeType = cursor.getString(mimeTypeColumn)
                     val dateAdded = cursor.getLong(dateAddedColumn)
 
-                    visualMedia.add(FileEntry(id,uri, name, size, mimeType, dateAdded))
+                    visualMedia.add(FileEntry(id, uri, name, size, mimeType, dateAdded))
                 }
             }
 
@@ -109,7 +109,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         }
     }
 
-    private var extraMimeTypeVideo: Array<String> = arrayOf()
+    private var permissionPreference: String? = null
     private var canSelectMultipleFlag: Boolean = false
     private var canSelectMultipleVideo: Boolean = false
     private var isSelectAnyFile: Boolean = false
@@ -121,55 +121,18 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
     private var galleryIntent: Intent? = null
     private var videoIntent: Intent? = null
     private var storageAccess = FULL
-
-    private val permissionList =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            arrayOf(
-                READ_MEDIA_IMAGES,
-                READ_MEDIA_VISUAL_USER_SELECTED
-            )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(
-                READ_MEDIA_IMAGES
-            )
-        } else {
-            arrayOf(READ_EXTERNAL_STORAGE)
-
-        }
+    private var cropType = Constant.CROP_SQUARE
+    private var isCrop = false
 
     private val cameraPermissionList = arrayOf(
         Manifest.permission.CAMERA
     )
-
-    private val permissionVideo =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            arrayOf(
-                READ_MEDIA_VIDEO,
-                READ_MEDIA_VISUAL_USER_SELECTED
-            )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(
-                READ_MEDIA_VIDEO
-            )
-    } else {
-        arrayOf(READ_EXTERNAL_STORAGE)
-
-    }
-
-    private val permissionVideoCamera = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(Manifest.permission.CAMERA)
-    } else {
-        arrayOf(Manifest.permission.CAMERA)
-    }
 
     object Constant {
         const val CROP_SQUARE = "CropSquare"
         const val CROP_RECTANGLE = "CropRectangle"
         const val CROP_CIRCLE = "CropCircle"
     }
-
-    private var cropType = Constant.CROP_SQUARE
-    private var isCrop = false
 
     private var cameraResult: ActivityResultLauncher<Intent>
     private var activityResultLauncherCamera: ActivityResultLauncher<Array<String>>
@@ -183,6 +146,27 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
     private var anyFilePicker: ActivityResultLauncher<Intent>
     private var cacheDir: File? = mActivity.cacheDir
     private var selectedDataFromPicker = false
+
+    val MAX_FILE_SIZE = 300 * 1024 * 1024 // 100 MB
+
+    fun getFileSize(uri: Uri): Long {
+        var fileSize: Long = 0
+        try {
+            // Query the URI for its file size using OpenableColumns.SIZE
+            val cursor = mActivity.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+            cursor?.use {
+                // Check if the cursor is not empty and the column exists
+                val sizeColumnIndex = it.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeColumnIndex != -1 && it.moveToFirst()) {
+                    fileSize = it.getLong(sizeColumnIndex)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return fileSize
+    }
+
 
     init {
         galleryResult =
@@ -237,9 +221,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                 if (result.resultCode == RESULT_OK) {
                     if (isSelectingVideo) {
                         mMediaSelector?.onCameraVideoUri(Uri.fromFile(File(fileForCameraIntent)))
-                    } else {/*compressImage(fileForCameraIntent).apply {
-                            openCropViewOrNot(Uri.fromFile(File(this)))
-                        }*/
+                    } else {
                         openCropViewOrNot(Uri.fromFile(File(fileForCameraIntent)))
                     }
                 }
@@ -257,84 +239,9 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                 }
             }
 
-        readExternalStorage =
-            mActivity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { permission ->
-                if (permission) {
-                    galleryResult.launch(galleryIntent)
-                }
-            }
-
         activityResultLauncherGallery =
             mActivity.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                    ContextCompat.checkSelfPermission(
-                        mActivity,
-                        READ_MEDIA_IMAGES
-                    ) == PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(
-                        mActivity,
-                        READ_MEDIA_VIDEO
-                    ) == PERMISSION_GRANTED
-                ) {
-                    // Full access on Android 13+
-                    storageAccess = FULL
-                    if (isSelectAnyFile) {
-                        openAnyIntent()
-                    } else {
-                        if (isSelectingVideo) selectVideoFromGallery(extraMimeTypeVideo)
-                        else openGallery()
-                    }
-
-                } else if (
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                    ContextCompat.checkSelfPermission(
-                        mActivity,
-                        READ_MEDIA_VISUAL_USER_SELECTED
-                    ) == PERMISSION_GRANTED
-                ) {
-                    // Partial access on Android 13+
-                    storageAccess = PARTIAL
-                    if (isSelectAnyFile) {
-                        openAnyIntent()
-                    } else {
-                        if (isSelectingVideo) {
-                            onNewImplementedStorageAccordingAccess(
-                                PARTIAL,
-                                canSelectMultipleFlag,
-                                canSelectMultipleVideo,
-                                MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
-                                isCrop
-                            )
-                        } else {
-                            onNewImplementedStorageAccordingAccess(
-                                PARTIAL,
-                                canSelectMultipleFlag,
-                                canSelectMultipleVideo,
-                                MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
-                                isCrop
-                            )
-                        }
-                    }
-
-                } else if (ContextCompat.checkSelfPermission(
-                        mActivity,
-                        READ_EXTERNAL_STORAGE
-                    ) == PERMISSION_GRANTED
-                ) {
-                    storageAccess = FULL
-                    //FULL access up to Android 12
-                    if (isSelectAnyFile) {
-                        openAnyIntent()
-                    } else {
-                        if (isSelectingVideo) selectVideoFromGallery(extraMimeTypeVideo)
-                        else openGallery()
-                    }
-
-                } else {
-                    // Access denied
-                    mActivity.showToast("Please allow permission from setting")
-                }
+                checkSelfPermission(permissionPreference?: IMAGE_PERMISSION)
             }
 
         singlePhotoPickerLauncher =
@@ -342,16 +249,18 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                 // Callback is invoked after the user selects a media item or closes the
                 // photo picker.
                 if (uri != null) {
-
                     if (isSelectingVideo) {
-                        mMediaSelector?.onVideoUri(uri)
+                        val fileSize = getFileSize(uri)
+                        if (fileSize > MAX_FILE_SIZE) {
+                            // Show a message if the file is too large
+                            Toast.makeText(mActivity, "The selected file is too large. Please select a smaller video.", Toast.LENGTH_LONG).show()
+                        }else{
+                            mMediaSelector?.onVideoUri(uri)
+                        }
                     } else {
                         selectedDataFromPicker = true
                         openCropViewOrNot(uri)
                     }
-                    Log.d("PhotoPicker", "Selected URI: $uri")
-                } else {
-                    Log.d("PhotoPicker", "No media selected")
                 }
             }
 
@@ -406,21 +315,44 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
 
                             }
                         }
-
-
                     }
                 }
             }
 
         multiplePhotoPickerLauncher =
             mActivity.registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(25)) { imageUris: List<Uri> ->
-                if (imageUris.isNotEmpty()) {
+                /*if (imageUris.isNotEmpty()) {
                     if (isSelectingVideo) {
                         mMediaSelector?.onVideoURIList(imageUris as ArrayList<Uri>)
-                    }
-                    else {
+                    } else {
                         selectedDataFromPicker = true
                         mMediaSelector?.onImageUriList(imageUris as ArrayList<Uri>)
+                    }
+                }*/
+                if (imageUris.isNotEmpty()) {
+                    var isFileTooLarge = false
+
+                    // Check file size for each selected URI
+                    for (uri in imageUris) {
+                        val fileSize = getFileSize(uri)
+
+                        if (fileSize > MAX_FILE_SIZE) {
+                            isFileTooLarge = true
+                            break // No need to check further if we found a large file
+                        }
+                    }
+
+                    if (isFileTooLarge) {
+                        // Show a message if any file is too large
+                        Toast.makeText(mActivity, "One or more files are too large. Please select smaller files.", Toast.LENGTH_LONG).show()
+                    } else {
+                        // Proceed with the video or image selection as per your logic
+                        if (isSelectingVideo) {
+                            mMediaSelector?.onVideoURIList(imageUris as ArrayList<Uri>)
+                        } else {
+                            selectedDataFromPicker = true
+                            mMediaSelector?.onImageUriList(imageUris as ArrayList<Uri>)
+                        }
                     }
                 }
             }
@@ -432,28 +364,60 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                         if (!canSelectMultipleVideo) {
                             val retriever = MediaMetadataRetriever()
                             val selectedMedia: Uri? = data
-                            val cR = mActivity.contentResolver
-                            val mime = MimeTypeMap.getSingleton()
-                            mime.getExtensionFromMimeType(cR.getType(selectedMedia!!))
-                            mMediaSelector?.onVideoUri(selectedMedia)
-                            retriever.release()
+                            val fileSize = selectedMedia?.let { getFileSize(it) }
+                            if (fileSize != null) {
+                                if (fileSize > MAX_FILE_SIZE) {
+                                    Toast.makeText(mActivity, "The selected file is too large. Please select a smaller video.", Toast.LENGTH_LONG).show()
+
+                                }else{
+                                    val cR = mActivity.contentResolver
+                                    val mime = MimeTypeMap.getSingleton()
+                                    mime.getExtensionFromMimeType(cR.getType(selectedMedia!!))
+                                    mMediaSelector?.onVideoUri(selectedMedia)
+                                    retriever.release()
+                                }
+                            }
                         } else {
                             if (this.clipData != null) {
                                 val mClipData: ClipData? = this.clipData
                                 val mArrayUri = ArrayList<Uri>()
-                                for (i in 0 until mClipData?.itemCount!!) {
-                                    val item = mClipData.getItemAt(i)
-                                    val uri: Uri = item.uri
-                                    mArrayUri.add(uri)
-                                    // Get the cursor
+                                if (mArrayUri.isNotEmpty()) {
+                                    var isFileTooLarge = false
+                                    for (uri in mArrayUri) {
+                                        val fileSize = getFileSize(uri)
+
+                                        if (fileSize > MAX_FILE_SIZE) {
+                                            isFileTooLarge = true
+                                            break // No need to check further if we found a large file
+                                        }
+                                    }
+                                    if (isFileTooLarge) {
+                                        // Show a message if any file is too large
+                                        Toast.makeText(mActivity, "One or more files are too large. Please select smaller files.", Toast.LENGTH_LONG).show()
+                                    }else{
+                                        for (i in 0 until mClipData?.itemCount!!) {
+                                            val item = mClipData.getItemAt(i)
+                                            val uri: Uri = item.uri
+                                            mArrayUri.add(uri)
+                                            // Get the cursor
+                                        }
+                                        mMediaSelector?.onVideoURIList(mArrayUri)
+                                    }
                                 }
-                                mMediaSelector?.onVideoURIList(mArrayUri)
                             } else {
                                 val selectedMedia: Uri? = data
-                                selectedMedia?.let {
-                                    ArrayList<Uri>().apply {
-                                        add(it)
-                                        mMediaSelector?.onVideoURIList(this)
+                                val fileSize = selectedMedia?.let { getFileSize(it) }
+                                if (fileSize != null) {
+                                    if (fileSize > MAX_FILE_SIZE) {
+                                        Toast.makeText(mActivity, "The selected file is too large. Please select a smaller video.", Toast.LENGTH_LONG).show()
+
+                                    }else{
+                                        selectedMedia.let {
+                                            ArrayList<Uri>().apply {
+                                                add(it)
+                                                mMediaSelector?.onVideoURIList(this)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -475,6 +439,26 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                         }
                     } catch (e: FileNotFoundException) {
                         e.printStackTrace()
+                    }
+                }
+            }
+
+        readExternalStorage =
+            mActivity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { permission ->
+                if (permission) {
+                    if (isPhotoPickerAvailable()) {
+                        if (canSelectMultipleFlag) multiplePhotoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                        else singlePhotoPickerLauncher?.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    } else {
+                        galleryResult.launch(galleryIntent)
                     }
                 }
             }
@@ -510,37 +494,39 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         isSelectingVideo = false
         isSelectAnyFile = false
 
-       /* DialogSelectMediaForImageVideo {
-            when (it.id) {
-                R.id.layoutTakePhoto -> {
-                    openCamera()
-                }
+        /* DialogSelectMediaForImageVideo {
+             when (it.id) {
+                 R.id.layoutTakePhoto -> {
+                     openCamera()
+                 }
 
-                R.id.layoutSelectPhoto -> {
-                    openGallery()
-                }
+                 R.id.layoutSelectPhoto -> {
+                     openGallery()
+                 }
 
-                R.id.layoutTakeVideo -> {
-                    isSelectingVideo = true
-                    dispatchTakeVideoIntent()
-                }
+                 R.id.layoutTakeVideo -> {
+                     isSelectingVideo = true
+                     dispatchTakeVideoIntent()
+                 }
 
-                R.id.layoutSelectVideo -> {
-                    isSelectingVideo = true
-                    selectVideoFromGallery(extraMimeType)
-                }
+                 R.id.layoutSelectVideo -> {
+                     isSelectingVideo = true
+                     selectVideoFromGallery(extraMimeType)
+                 }
 
-            }
-        }.apply {
-        }.show(childFragmentManager, "")*/
+             }
+         }.apply {
+         }.show(childFragmentManager, "")*/
     }
 
+    /**
+     * Launch the Image Picker View.
+     * **/
     override fun selectOptionsForImagePicker(isCrop1: Boolean, cropType: String) {
         this.cropType = cropType
         this.isCrop = isCrop1
         isSelectingVideo = false
         isSelectAnyFile = false
-
 
         val builder = AlertDialog.Builder(mActivity)
         builder.setTitle("Choose Image Source")
@@ -553,7 +539,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         builder.setItems(items) { _, which ->
             when (which) {
                 0 -> openCamera()
-                1 -> checkStoragePermission()
+                1 -> checkSelfPermission(IMAGE_PERMISSION)/*checkStoragePermission()*/
             }
         }
 
@@ -561,11 +547,10 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
     }
 
     /**
-     * Below code is for launching the custom screen after user selects the media (Only given access media)
+     * Below code is for launching the custom screen after user selects the media (Only given access media).
      * **/
-
     private fun onNewImplementedStorageAccordingAccess(
-        storageAccess:String,
+        storageAccess: String,
         canSelectMultipleFlag: Boolean,
         canSelectMultipleVideo: Boolean,
         imageOrVideo: String,
@@ -595,7 +580,13 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                                                     it.uri
                                                 )
                                                     ?.let { new ->
-                                                        mMediaSelector?.onUpdatedStorageMedia(storageAccess,canSelectMultipleFlag,canSelectMultipleVideo,imageOrVideo,new)
+                                                        mMediaSelector?.onUpdatedStorageMedia(
+                                                            storageAccess,
+                                                            canSelectMultipleFlag,
+                                                            canSelectMultipleVideo,
+                                                            imageOrVideo,
+                                                            new
+                                                        )
                                                     }
                                             }
                                         } else {
@@ -604,21 +595,28 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                                                     mActivity,
                                                     it.uri
                                                 )?.let { newPath ->
-                                                    mMediaSelector?.onUpdatedStorageMedia(storageAccess,canSelectMultipleFlag,canSelectMultipleVideo,imageOrVideo,newPath)
+                                                    mMediaSelector?.onUpdatedStorageMedia(
+                                                        storageAccess,
+                                                        canSelectMultipleFlag,
+                                                        canSelectMultipleVideo,
+                                                        imageOrVideo,
+                                                        newPath
+                                                    )
                                                 }
                                             }
                                         }
-                                    }, mActivity,this@MediaSelectHelper)
+                                    }, mActivity, this@MediaSelectHelper)
                                 customImageVideoListDialogFragment.arguments =
                                     bundleOf(
                                         SELECTED_IMAGE_VIDEO_LIST to it,
                                         CAN_SELECT_MULTIPLE_FLAG to canSelectMultipleFlag,
-                                        CAN_SELECT_MULTIPLE_VIDEO to canSelectMultipleVideo,
+                                        CAN_SELECT_MULTIPLE_VIDEO to canSelectMultipleFlag,
                                         VIDEO_OR_IMAGE to imageOrVideo,
                                         CROP_AVAILABLE to true
                                     )
                                 customImageVideoListDialogFragment.setCropAndType(
-                                    isCrop
+                                    isCrop,
+                                    cropType = if (cropType == Constant.CROP_CIRCLE) CropImageView.CropShape.OVAL else if (cropType == Constant.CROP_RECTANGLE) CropImageView.CropShape.RECTANGLE else null
                                 )
                                 customImageVideoListDialogFragment.setLimitedAccessLayoutBackgroundColor(
                                     limitedAccessBackgroundColor
@@ -635,99 +633,70 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         }
     }
 
-    private fun checkStoragePermission(){
-         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(
-                mActivity,
-                READ_MEDIA_IMAGES
-            ) == PERMISSION_GRANTED
+    /**
+     * Check version and user given permission and further operation depending user select the permission.
+     * **/
+    private fun checkSelfPermission(permissionType: String) {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            (
+                    ContextCompat.checkSelfPermission(
+                        mActivity,
+                        READ_MEDIA_IMAGES
+                    ) == PERMISSION_GRANTED ||
+                            ContextCompat.checkSelfPermission(
+                                mActivity,
+                                READ_MEDIA_VIDEO
+                            ) == PERMISSION_GRANTED
+                    )
         ) {
-            // Full access on Android 13+
+            // Full access on Android 13 (API level 33) or higher
             storageAccess = FULL
-            if (isSelectAnyFile) {
-                openAnyIntent()
-            } else {
-                if (isSelectingVideo) selectVideoFromGallery(extraMimeTypeVideo)
-                else openGallery()
-            }
-
-        } else if (
-             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-             ContextCompat.checkSelfPermission(
-                 mActivity,
-                 READ_MEDIA_VISUAL_USER_SELECTED
-             ) == PERMISSION_GRANTED
-        ) {
-            // Partial access on Android 13+
-            storageAccess = PARTIAL
             if (isSelectAnyFile) {
                 openAnyIntent()
             } else {
                 if (isSelectingVideo) {
-                    //selectVideoFromGallery(extraMimeTypeVideo)
-                    onNewImplementedStorageAccordingAccess(
-                        PARTIAL,
-                        canSelectMultipleFlag,
-                        canSelectMultipleVideo,
-                        MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
-                        isCrop
-                    )
+                    if (isPhotoPickerAvailable()) {
+                        (fragmentManager?.findFragmentByTag(MEDIA_PICKER) as? CustomImageVideoListDialogFragment)?.dismiss()
+                        if (canSelectMultipleFlag) multiplePhotoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.VideoOnly
+                            )
+                        )
+                        else singlePhotoPickerLauncher?.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.VideoOnly
+                            )
+                        )
+                    } else {
+                        galleryResult.launch(galleryIntent)
+                    }
                 } else {
-                    onNewImplementedStorageAccordingAccess(
-                        PARTIAL,
-                        canSelectMultipleFlag,
-                        canSelectMultipleVideo,
-                        MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
-                        isCrop
-                    )
+                    if (isPhotoPickerAvailable()) {
+                        (fragmentManager?.findFragmentByTag(MEDIA_PICKER) as? CustomImageVideoListDialogFragment)?.dismiss()
+                        if (canSelectMultipleFlag) multiplePhotoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                        else singlePhotoPickerLauncher?.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    } else {
+                        galleryResult.launch(galleryIntent)
+                    }
                 }
             }
-
-        } else if (ContextCompat.checkSelfPermission(
-                mActivity,
-                READ_EXTERNAL_STORAGE
-            ) == PERMISSION_GRANTED
-        ) {
-            storageAccess = FULL
-            // Full access up to Android 12
-            if (isSelectAnyFile) {
-                openAnyIntent()
-            } else {
-                if (isSelectingVideo) selectVideoFromGallery(extraMimeTypeVideo)
-                else openGallery()
-            }
-
-        } else {
-            // Access denied
-            openGallery()
-        }
-    }
-
-    private fun checkStorageVideoPermission(extraMimeType: Array<String>) {
-         if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-
-             ContextCompat.checkSelfPermission(
-                mActivity,
-                READ_MEDIA_VIDEO
-            ) == PERMISSION_GRANTED
-        ) {
-            // Full access on Android 13+
-            storageAccess = FULL
-            if (isSelectAnyFile) {
-                openAnyIntent()
-            } else {
-                if (isSelectingVideo) selectVideoFromGallery(extraMimeTypeVideo)
-                else selectVideoFromGallery(extraMimeType)
-            }
-
         } else if (
-             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-             ContextCompat.checkSelfPermission(
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            ContextCompat.checkSelfPermission(
                 mActivity,
                 READ_MEDIA_VISUAL_USER_SELECTED
             ) == PERMISSION_GRANTED
         ) {
-            // Partial access on Android 13+
+            // Partial access on Android 14 (API level 34) or higher
             storageAccess = PARTIAL
             if (isSelectAnyFile) {
                 openAnyIntent()
@@ -742,7 +711,6 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                         isCrop
                     )
                 } else {
-                    //if (selectedDataFromPicker)
                     onNewImplementedStorageAccordingAccess(
                         PARTIAL,
                         canSelectMultipleFlag,
@@ -752,45 +720,126 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                     )
                 }
             }
-
         } else if (ContextCompat.checkSelfPermission(
                 mActivity,
                 READ_EXTERNAL_STORAGE
             ) == PERMISSION_GRANTED
         ) {
+            // Full access up to Android 12 (API level 32)
             storageAccess = FULL
             // Full access up to Android 12
             if (isSelectAnyFile) {
                 openAnyIntent()
             } else {
-                if (isSelectingVideo) selectVideoFromGallery(extraMimeTypeVideo)
-                else selectVideoFromGallery(extraMimeType)
+                if (isSelectingVideo) {
+                    if (isPhotoPickerAvailable()) {
+                        if (storageAccess == FULL) {
+                            (fragmentManager?.findFragmentByTag(MEDIA_PICKER) as? CustomImageVideoListDialogFragment)?.dismiss()
+                            if (canSelectMultipleFlag) multiplePhotoPickerLauncher.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.VideoOnly
+                                )
+                            )
+                            else singlePhotoPickerLauncher?.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.VideoOnly
+                                )
+                            )
+                        } else {
+                            onNewImplementedStorageAccordingAccess(
+                                "Direct",
+                                canSelectMultipleFlag,
+                                canSelectMultipleVideo,
+                                MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
+                                isCrop
+                            )
+                        }
+                    } else {
+                        galleryVideoResult.launch(videoIntent)
+                    }
+                } else {
+                    if (isPhotoPickerAvailable()) {
+                        if (canSelectMultipleFlag) multiplePhotoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                        else singlePhotoPickerLauncher?.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    } else {
+                        galleryResult.launch(galleryIntent)
+                    }
+                }
             }
-
         } else {
             // Access denied
-            selectVideoFromGallery(extraMimeType)
+            requestThePermission(permissionType)
+        }
+
+    }
+
+    /**
+     * Request the permission.
+     * **/
+    private fun requestThePermission(permissionType: String) {
+        if (permissionType == IMAGE_PERMISSION) {
+            this.permissionPreference = IMAGE_PERMISSION
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                activityResultLauncherGallery.launch(
+                    arrayOf(
+                        READ_MEDIA_IMAGES,
+                        READ_MEDIA_VISUAL_USER_SELECTED
+                    )
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                activityResultLauncherGallery.launch(arrayOf(READ_MEDIA_IMAGES))
+            } else {
+                activityResultLauncherGallery.launch(arrayOf(READ_EXTERNAL_STORAGE))
+            }
+        } else {
+            this.permissionPreference = VIDEO_PERMISSION
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                activityResultLauncherGallery.launch(
+                    arrayOf(
+                        READ_MEDIA_VIDEO,
+                        READ_MEDIA_VISUAL_USER_SELECTED
+                    )
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                activityResultLauncherGallery.launch(arrayOf(READ_MEDIA_VIDEO))
+            } else {
+                activityResultLauncherGallery.launch(arrayOf(READ_EXTERNAL_STORAGE))
+            }
         }
     }
 
+    /**
+     * Launch the Video picker view.
+     * **/
     override fun selectOptionsForVideoPicker(extraMimeType: Array<String>) {
         isSelectAnyFile = false
         isSelectingVideo = true
         this.isCrop = false
         AlertDialog.Builder(mActivity).setTitle("Choose Video Source").setItems(
             arrayOf(
-            mActivity.resources?.getString(R.string.label_camera),
-            mActivity.resources?.getString(R.string.label_gallery)
+                mActivity.resources?.getString(R.string.label_camera),
+                mActivity.resources?.getString(R.string.label_gallery)
             )
         ) { _, which ->
 
             when (which) {
                 0 -> dispatchTakeVideoIntent()
-                1 -> checkStorageVideoPermission(extraMimeType)
+                1 -> checkSelfPermission(VIDEO_PERMISSION)/*checkStorageVideoPermission(extraMimeType)*/
             }
         }.show()
     }
 
+    /**
+     * Launch the camera to take picture.
+     * **/
     override fun openCameraPictureIntent(isCrop1: Boolean, cropType: String) {
         this.cropType = cropType
         this.isCrop = isCrop1
@@ -799,6 +848,9 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         openCamera()
     }
 
+    /**
+     * Launch the camera to take video.
+     * **/
     override fun openCameraVideoIntent() {
         isSelectAnyFile = false
         isSelectingVideo = true
@@ -806,86 +858,10 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         dispatchTakeVideoIntent()
     }
 
-    override fun selectVideoFromGallery(extraMimeType: Array<String>) {
-        extraMimeTypeVideo = extraMimeType
-        canSelectMultipleVideo(canSelectMultipleVideo, extraMimeType)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-            && (ContextCompat.checkSelfPermission(
-                mActivity, READ_MEDIA_VIDEO
-            ) != PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
-                mActivity, READ_MEDIA_VISUAL_USER_SELECTED
-            ) != PERMISSION_GRANTED)
-        ) {
-            activityResultLauncherGallery.launch(permissionVideo)
-
-        } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU
-            && (ContextCompat.checkSelfPermission(
-                mActivity, READ_MEDIA_VIDEO
-            ) != PERMISSION_GRANTED)
-        ) {
-            activityResultLauncherGallery.launch(permissionVideo)
-
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
-                mActivity, READ_EXTERNAL_STORAGE
-            ) != PERMISSION_GRANTED
-        ) {
-            activityResultLauncherGallery.launch(permissionVideo)
-        } else {
-            if (isPhotoPickerAvailable() && extraMimeType.isEmpty()) {
-                if (storageAccess == FULL) {
-                    if (canSelectMultipleFlag) multiplePhotoPickerLauncher.launch(
-                        PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.VideoOnly
-                        )
-                    )
-                    else singlePhotoPickerLauncher?.launch(
-                        PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.VideoOnly
-                        )
-                    )
-                } else {
-                    onNewImplementedStorageAccordingAccess(
-                        "Direct",
-                        canSelectMultipleFlag,
-                        canSelectMultipleVideo,
-                        MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
-                        isCrop
-                    )
-                }
-            } else {
-                galleryVideoResult.launch(videoIntent)
-            }
-        }
-    }
-
-    override fun showImageMenu(view: View) {
-        val popup = PopupMenu(mActivity, view)
-        popup.menu.add("Camera")
-        popup.menu.add("Gallery")
-        popup.setOnMenuItemClickListener { item ->
-
-            when (item.title.toString()) {
-                "Camera" -> {
-                    openCamera()
-                }
-
-                "Gallery" -> {
-                    openGallery()
-                }
-            }
-            true
-        }
-        popup.show()
-
-
-    }
-
     /**
-     * Open camera to click image
-     */
+     * Check permission and Open camera to take image.
+     **/
     private fun openCamera() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.CAMERA
@@ -906,8 +882,6 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
 
     private fun dispatchTakePictureIntent() {
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        /*if (mActivity.packageManager?.let {
-                takePictureIntent.resolveActivity(it) } != null) {*/
         val photoFile: File? = try {
             createImageFile()
         } catch (ex: IOException) {
@@ -923,23 +897,19 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
             cameraResult.launch(takePictureIntent)
 
         }
-        //  }
     }
 
     private fun dispatchTakeVideoIntent() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
                 mActivity, Manifest.permission.CAMERA
             ) != PERMISSION_GRANTED
         ) {
-
-            //Log.e("++++dispatchTakeVideoIntent", "IFFF")
-            activityResultLauncherCamera.launch(permissionVideoCamera)
+            activityResultLauncherCamera.launch(cameraPermissionList)
         } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && (ContextCompat.checkSelfPermission(
                 mActivity, Manifest.permission.CAMERA
             ) != PERMISSION_GRANTED)
         ) {
-            activityResultLauncherCamera.launch(permissionVideoCamera)
+            activityResultLauncherCamera.launch(cameraPermissionList)
         } else {
             val takePictureIntent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
             // Ensure that there's a camera activity to handle the intent
@@ -972,7 +942,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                 mActivity, READ_EXTERNAL_STORAGE
             ) != PERMISSION_GRANTED
         ) {
-            activityResultLauncherGallery.launch(permissionList)
+            activityResultLauncherGallery.launch(arrayOf(READ_EXTERNAL_STORAGE))
         } else {
             anyFilePicker.launch(getFileChooserIntent(arrayOf("image/*", "application/pdf")))
         }
@@ -983,7 +953,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                 mActivity, READ_EXTERNAL_STORAGE
             ) != PERMISSION_GRANTED
         ) {
-            activityResultLauncherGallery.launch(permissionList)
+            activityResultLauncherGallery.launch(arrayOf(READ_EXTERNAL_STORAGE))
         } else {
             anyFilePicker.launch(
                 getFileChooserIntent(
@@ -992,58 +962,6 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
                     )
                 )
             )
-        }
-    }
-
-    /**
-     * Open gallery for select single image
-     */
-    private fun openGallery() {
-        //Log.e("++++Build.VERSION.SDK_INT", Build.VERSION.SDK_INT.toString())
-        isSelectAnyFile = false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-            && (ContextCompat.checkSelfPermission(
-                mActivity, READ_MEDIA_IMAGES
-            ) != PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
-                mActivity, READ_MEDIA_VISUAL_USER_SELECTED
-            ) != PERMISSION_GRANTED)
-        ) {
-            activityResultLauncherGallery.launch(permissionList)
-
-        } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU
-            && (ContextCompat.checkSelfPermission(
-                mActivity, READ_MEDIA_IMAGES
-            ) != PERMISSION_GRANTED)
-        ) {
-            activityResultLauncherGallery.launch(permissionList)
-
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
-                mActivity, READ_EXTERNAL_STORAGE
-            ) != PERMISSION_GRANTED
-        ) {
-            readExternalStorage.launch(READ_EXTERNAL_STORAGE)
-        } else {
-            if (isPhotoPickerAvailable()) {
-
-                if (storageAccess == "Full") {
-                    if (canSelectMultipleFlag) multiplePhotoPickerLauncher.launch(
-                        PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.ImageOnly
-                        )
-                    )
-                    else singlePhotoPickerLauncher?.launch(
-                        PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.ImageOnly
-                        )
-                    )
-                } else {
-                    onNewImplementedStorageAccordingAccess("Direct",canSelectMultipleFlag,canSelectMultipleVideo,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),isCrop)
-                }
-
-                //mMediaSelector?.onNewImplementedStorageAccordingAccess("Direct")
-            } else {
-                galleryResult.launch(galleryIntent)
-            }
         }
     }
 
@@ -1057,12 +975,14 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         return intent
     }
 
+    /**
+     * Check Photo-picker is available or not
+     * **/
     private fun isPhotoPickerAvailable(): Boolean {
         return when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
                 true
             }
-
             else -> false
         }
     }
@@ -1084,15 +1004,15 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
     override fun checkSelfStorageAndOpenPhotoPickerWindowForSelection(type: String) {
         storageAccess = PARTIAL
         if (type == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString()) {
-            openGallery()
+            requestThePermission(IMAGE_PERMISSION)
         } else {
-            selectVideoFromGallery()
+            requestThePermission(VIDEO_PERMISSION)
         }
     }
 
     override fun canSelectMultipleVideo(canSelect: Boolean, extraMimeType: Array<String>) {
         canSelectMultipleVideo = canSelect
-
+        canSelectMultipleFlag = canSelect
         videoIntent = Intent(Intent.ACTION_GET_CONTENT)
         videoIntent?.type = "*/*"
 
@@ -1100,9 +1020,7 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
             Intent.EXTRA_MIME_TYPES, arrayOf("video/*")
         )
         else videoIntent?.putExtra(Intent.EXTRA_MIME_TYPES, extraMimeType)
-
         videoIntent?.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, canSelect)
-
     }
 
     override fun getThumbnailFromVideo(uri: Uri): File {
@@ -1190,20 +1108,15 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
     }
 
     private fun clearCacheFile() {
-        //Log.e("ClearFileCalled", "****")
         if (cacheDir?.isDirectory == true) {
-            //Log.e("ClearFileCalled", "****IsDir")
             val files = cacheDir?.listFiles()
             if (files != null) {
-                //Log.e("ClearFileCalled", "****files != null")
                 for (file in files) {
-                    //Log.e("ClearFileCalled", "****delete")
                     file.delete()
                 }
             }
         }
     }
-
 
     private fun checkAllPermission(grantResults: Map<String, Boolean>): Boolean {
         for (data in grantResults) {
@@ -1272,7 +1185,6 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         return true
     }
 
-
     companion object {
         const val SELECTED_IMAGE_VIDEO_LIST = "selectedImagesVideoList"
         const val CAN_SELECT_MULTIPLE_FLAG = "canSelectMultipleFlag"
@@ -1282,6 +1194,8 @@ class MediaSelectHelper (private var mActivity: AppCompatActivity) :
         const val MEDIA_PICKER = "mediaPicker"
         const val FULL = "Full"
         const val PARTIAL = "Partial"
+        const val IMAGE_PERMISSION = "imagePermission"
+        const val VIDEO_PERMISSION = "videoPermission"
     }
 
 
@@ -1300,20 +1214,20 @@ enum class FileType {
 
 interface FileSelectorMethods {
     fun setLifecycle(lifecycleOwner: LifecycleOwner)
-    fun showImageMenu(view: View)
     fun registerCallback(mMediaSelector: MediaSelector, fragmentManager: FragmentManager)
     fun selectOptionsForVideoPicker(extraMimeType: Array<String> = arrayOf())
-    fun selectVideoFromGallery(extraMimeType: Array<String> = arrayOf())
     fun selectOptionsForImagePicker(
         isCrop1: Boolean,
         cropType: String = MediaSelectHelper.Constant.CROP_SQUARE,
     )
+
     fun selectVideoAndImagePicker(
         childFragmentManager: FragmentManager,
         isCrop1: Boolean,
         cropType: String = MediaSelectHelper.Constant.CROP_SQUARE,
         extraMimeType: Array<String> = arrayOf()
     )
+
     fun canSelectMultipleImages(canSelect: Boolean)
     fun canSelectMultipleVideo(canSelect: Boolean, extraMimeType: Array<String> = arrayOf())
     fun openAnyIntent()
@@ -1335,6 +1249,7 @@ interface MediaSelector {
         mediaPath: String
     ) {
     }
+
     fun onVideoUri(uri: Uri) {
     }
 
