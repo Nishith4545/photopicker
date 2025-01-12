@@ -194,6 +194,7 @@ class CustomImageVideoListDialogFragment(
             if ((customImageVideoListAdapter?.getItems()
                     ?.filter { data -> data.isImageSelected } as ArrayList<FileEntry>).isEmpty()
             ) {
+                progressCircular.hide()
                 Toast.makeText(requireContext(), "Please select media", Toast.LENGTH_SHORT).show()
             } else {
 
