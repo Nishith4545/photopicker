@@ -43,7 +43,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":mediapicker"))
+    implementation(project(":photopicker"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
