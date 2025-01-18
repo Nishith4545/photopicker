@@ -1,5 +1,7 @@
 # PhotoPicker Android Kotlin Library
 
+<img src="image_2024_11_28T10_44_04_760Z.png" alt="MediaPicker Screenshot" width="250"/>
+
 This is a simple Android Kotlin library to integrate the new Android Photo Picker in your app, in compliance with Google's new policy regarding the use of photo and video permissions. The library allows you to easily access photos and videos while adhering to privacy guidelines.
 
 ## Library Version
@@ -16,8 +18,23 @@ Add the following dependency in your `build.gradle` file to use the library:
        implementation 'com.github.Nishith4545:photopicker:1.0.0'
    }
 ```
-                                                          
+### Overview
+
+The **PhotoPicker Library** is designed for apps that have a one-time or infrequent need to access photos and videos. The library uses the system picker (Android Photo Picker) and is compliant with Google's latest policy updates.
+
+This library is ideal for scenarios like:
+- Allowing users to select one or few images/videos at a time.
+- No persistent or frequent access to media files is required.
+
+### Features
+
+- Complies with Android's Photo Picker and the new Play Store policy.
+- Simple integration with minimal permissions.
+- Supports both image and video selection.
+- Compatible with lower Android versions as well.
+                                                      
 ## Usage
+
 ### Step 1: Initialize the MediaSelectHelper
 In your Fragment or Activity's onCreate method, initialize the MediaSelectHelper instance.
 
