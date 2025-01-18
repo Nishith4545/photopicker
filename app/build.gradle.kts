@@ -8,12 +8,12 @@ plugins {
 }
 
 android {
-    namespace = "com.nishith.mediaselectorapp"
+    namespace = "com.nishith.photopickerDemoApp"
     compileSdk = 34
 
     defaultConfig {
         applicationId = "com.nishith.justtestmodule"
-        minSdk = 29
+        minSdk = 23
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -52,12 +52,9 @@ dependencies {
     //implementation(libs.hilt.android)
     //kapt(libs.hilt.android.compiler)
     androidTestImplementation(libs.androidx.espresso.core)
-
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
-
-    //implementation("com.github.Nishith4545:mediapicker:1.0.1")
 }
 kapt {
     correctErrorTypes = true
