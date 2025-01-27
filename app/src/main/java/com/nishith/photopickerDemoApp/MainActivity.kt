@@ -3,22 +3,22 @@ package com.nishith.photopickerDemoApp
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
-import com.nishith.photopickerDemoApp.databinding.ActivityMainBinding
+import com.bumptech.glide.Glide
 import com.nishith.photopicker.base.BaseActivity
-import com.nishith.photopicker.extention.hide
-import com.nishith.photopicker.extention.loadImagefromServerAny
-import com.nishith.photopicker.extention.show
 import com.nishith.photopicker.fileselector.MediaSelectHelper
 import com.nishith.photopicker.fileselector.MediaSelector
+import com.nishith.photopicker.fileselector.OutPutFileAny
 import com.nishith.photopicker.utils.FileHelperKit.getPath
+import com.nishith.photopickerDemoApp.databinding.ActivityMainBinding
 
 class MainActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    lateinit var mediaSelectHelper: MediaSelectHelper
+    private lateinit var mediaSelectHelper: MediaSelectHelper
 
     private var player: ExoPlayer? = null
 
@@ -87,6 +87,10 @@ class MainActivity : BaseActivity() {
             override fun onVideoURIList(uriArrayList: ArrayList<Uri>) {
                 super.onVideoURIList(uriArrayList)
             }
+
+            override fun onAnyFileSelected(outPutFileAny: OutPutFileAny) {
+                super.onAnyFileSelected(outPutFileAny)
+            }
         }, supportFragmentManager)
     }
 
@@ -95,5 +99,21 @@ class MainActivity : BaseActivity() {
         player!!.setMediaItem(mediaItem)
         player!!.prepare()
         player!!.playWhenReady = true
+    }
+}
+
+fun View.show() {
+    this.visibility = View.VISIBLE
+}
+
+fun View.hide() {
+    this.visibility = View.GONE
+}
+
+fun ImageView?.loadImagefromServerAny(path: Any?) {
+    this?.context?.let {
+        Glide.with(it)
+            .load(path)
+            .into(this)
     }
 }
