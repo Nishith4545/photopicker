@@ -12,7 +12,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.nishith.justtestmodule"
+        applicationId = "com.nishith.photopickerDemoApp"
         minSdk = 23
         targetSdk = 34
         versionCode = 1
@@ -49,8 +49,7 @@ dependencies {
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
-    //implementation(libs.hilt.android)
-    //kapt(libs.hilt.android.compiler)
+    implementation(libs.glide)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
