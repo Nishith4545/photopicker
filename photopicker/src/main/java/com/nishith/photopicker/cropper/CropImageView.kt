@@ -223,10 +223,11 @@ class CropImageView @JvmOverloads constructor(context: Context, attrs: Attribute
                             options.aspectRatioY
                         )
                     options.scaleType =
-                        ScaleType.entries[ta.getInt(
+                        ScaleType.values()[ta.getInt(
                             R.styleable.CropImageView_cropScaleType,
                             options.scaleType.ordinal
-                        )]
+                        )]  // ✅ Updated
+
                     options.autoZoomEnabled =
                         ta.getBoolean(
                             R.styleable.CropImageView_cropAutoZoomEnabled,
@@ -239,15 +240,18 @@ class CropImageView @JvmOverloads constructor(context: Context, attrs: Attribute
                         )
                     options.maxZoom =
                         ta.getInteger(R.styleable.CropImageView_cropMaxZoom, options.maxZoom)
+
                     options.cropShape =
-                        CropShape.entries[ta.getInt(
+                        CropShape.values()[ta.getInt(
                             R.styleable.CropImageView_cropShape,
                             options.cropShape.ordinal
-                        )]
+                        )]  // ✅ Updated
+
                     options.guidelines =
-                        Guidelines.entries[ta.getInt(
+                        Guidelines.values()[ta.getInt(
                             R.styleable.CropImageView_cropGuidelines, options.guidelines.ordinal
-                        )]
+                        )]  // ✅ Updated
+
                     options.snapRadius =
                         ta.getDimension(
                             R.styleable.CropImageView_cropSnapRadius,
@@ -363,7 +367,7 @@ class CropImageView @JvmOverloads constructor(context: Context, attrs: Attribute
                             isSaveBitmapToInstanceState
                         )
 
-                    // if aspect ratio is set then set fixed to true
+                    // If aspect ratio is set, then set fixed to true
                     if (ta.hasValue(R.styleable.CropImageView_cropAspectRatioX)
                         && ta.hasValue(R.styleable.CropImageView_cropAspectRatioX)
                         && !ta.hasValue(R.styleable.CropImageView_cropFixAspectRatio)
@@ -374,6 +378,7 @@ class CropImageView @JvmOverloads constructor(context: Context, attrs: Attribute
                     ta.recycle()
                 }
             }
+
         }
 
         options.validate()

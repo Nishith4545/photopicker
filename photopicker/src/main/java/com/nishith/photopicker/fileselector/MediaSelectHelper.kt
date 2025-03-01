@@ -1,6 +1,7 @@
 package com.nishith.photopicker.fileselector
 
 import android.Manifest
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.annotation.SuppressLint
 import android.app.Activity.RESULT_OK
 import android.content.ContentResolver
@@ -46,8 +47,10 @@ class MediaSelectHelper(private var mActivity: AppCompatActivity) :
     private var fragmentManager: FragmentManager? = null
     private var fileForCameraIntent: String = ""
     private var photoFile: File? = null
-    private var cropType = Constant.CROP_SQUARE
+    private var cropType = CROP_SQUARE
     private var isCrop = false
+    private var activityResultPdfLauncher: ActivityResultLauncher<Array<String>>
+    private var anyFilePicker: ActivityResultLauncher<Intent>
 
     private val cameraPermissionList = arrayOf(
         Manifest.permission.CAMERA
@@ -67,9 +70,9 @@ class MediaSelectHelper(private var mActivity: AppCompatActivity) :
     private var cacheDir: File? = mActivity.cacheDir
     private var selectedDataFromPicker = false
 
-    val MAX_FILE_SIZE = 300 * 1024 * 1024 // 100 MB
+    private val MAX_FILE_SIZE = 300 * 1024 * 1024 // 100 MB
 
-    fun getFileSize(uri: Uri): Long {
+    private fun getFileSize(uri: Uri): Long {
         var fileSize: Long = 0
         try {
             // Query the URI for its file size using OpenableColumns.SIZE
@@ -190,6 +193,64 @@ class MediaSelectHelper(private var mActivity: AppCompatActivity) :
                 }
             }
 
+        activityResultPdfLauncher =
+            mActivity.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+                if (ContextCompat.checkSelfPermission(
+                        mActivity,
+                        READ_EXTERNAL_STORAGE
+                    ) == PERMISSION_GRANTED
+                ) {
+                    openPdfIntent()
+                } else {
+                    mActivity.showToast("Please allow permission from setting")
+                }
+            }
+
+        anyFilePicker =
+            mActivity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+                if (result.resultCode == RESULT_OK) {
+                    result.data?.apply {
+                        val selectedMedia: Uri? = data
+                        val cR = mActivity.contentResolver
+                        val mime = MimeTypeMap.getSingleton()
+                        mime.getExtensionFromMimeType(cR.getType(selectedMedia!!))
+
+                        val contentResolver = mActivity.contentResolver
+                        when (contentResolver?.getType(selectedMedia)) {
+                            "application/pdf" -> {
+                                val copyFile =
+                                    getActualPath(selectedMedia, createAnyFile(".pdf"))
+                                mMediaSelector?.onAnyFileSelected(
+                                    OutPutFileAny(
+                                        Uri.fromFile(
+                                            copyFile
+                                        ), FileType.Pdf
+                                    )
+                                )
+
+                            }
+
+                            "application/msword" -> {
+                                val copyFile =
+                                    getActualPath(selectedMedia, createAnyFile(".doc"))
+                                mMediaSelector?.onAnyFileSelected(
+                                    OutPutFileAny(
+                                        Uri.fromFile(
+                                            copyFile
+                                        ), FileType.Doc
+                                    )
+                                )
+
+                            }
+
+                            else -> {
+
+                            }
+                        }
+                    }
+                }
+            }
+
         canSelectMultipleImages(false)
     }
 
@@ -287,6 +348,33 @@ class MediaSelectHelper(private var mActivity: AppCompatActivity) :
         isSelectingVideo = true
         this.isCrop = false
         dispatchTakeVideoIntent()
+    }
+
+    override fun openPdfIntent() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
+                mActivity, READ_EXTERNAL_STORAGE
+            ) != PERMISSION_GRANTED
+        ) {
+            activityResultPdfLauncher.launch(arrayOf(READ_EXTERNAL_STORAGE))
+        } else {
+            anyFilePicker.launch(
+                getFileChooserIntent(
+                    arrayOf(
+                        "application/msword", "application/pdf"
+                    )
+                )
+            )
+        }
+    }
+
+    private fun getFileChooserIntent(type: Array<String>): Intent {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        intent.type = if (type.size == 1) type[0] else "*/*"
+        if (type.isNotEmpty()) {
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, type)
+        }
+        return intent
     }
 
     /**
@@ -413,7 +501,7 @@ class MediaSelectHelper(private var mActivity: AppCompatActivity) :
     private fun openCropViewOrNot(file: Uri) {
         if (isCrop) {
             val intent: Intent = when (this.cropType) {
-                Constant.CROP_SQUARE -> CropImage.activity(file).setAspectRatio(4, 4)
+                CROP_SQUARE -> CropImage.activity(file).setAspectRatio(4, 4)
                     .getIntent(mActivity)
 
                 Constant.CROP_RECTANGLE -> CropImage.activity(file)
@@ -552,16 +640,18 @@ class MediaSelectHelper(private var mActivity: AppCompatActivity) :
         return true
     }
 
-    companion object {
-        const val MEDIA_PICKER = "mediaPicker"
-    }
-
     override fun onDestroy(owner: LifecycleOwner) {
         clearCacheFile()
         super.onDestroy(owner)
     }
 
 }
+
+enum class FileType {
+    Pdf, Doc
+}
+
+data class OutPutFileAny(val uri: Uri, val type: FileType, val thumbImage: String? = null)
 
 interface FileSelectorMethods {
     fun setLifecycle(lifecycleOwner: LifecycleOwner)
@@ -577,6 +667,7 @@ interface FileSelectorMethods {
     fun openCameraPictureIntent(isCrop1: Boolean, cropType: String)
     fun openCameraVideoIntent()
     fun getThumbnailFromVideo(uri: Uri): File
+    fun openPdfIntent()
 }
 
 
@@ -591,6 +682,9 @@ interface MediaSelector {
 
     fun onImageUriList(uriArrayList: ArrayList<Uri>) {}
     fun onVideoURIList(uriArrayList: ArrayList<Uri>) {
+
+    }
+    fun onAnyFileSelected(outPutFileAny: OutPutFileAny) {
 
     }
 }

@@ -293,13 +293,13 @@ class CropImageOptions : Parcelable {
     }
 
     /** Create object from parcel.  */
-     constructor(`in`: Parcel) {
-        cropShape = CropShape.entries.toTypedArray().get(`in`.readInt())
+    /** Create object from parcel. */
+    constructor(`in`: Parcel) {
+        cropShape = CropShape.values()[`in`.readInt()]
         snapRadius = `in`.readFloat()
         touchRadius = `in`.readFloat()
-        guidelines = Guidelines.entries.toTypedArray().get(`in`.readInt())
-        scaleType = CropImageView.ScaleType.entries.toTypedArray()
-            .get(`in`.readInt())
+        guidelines = Guidelines.values()[`in`.readInt()]
+        scaleType = CropImageView.ScaleType.values()[`in`.readInt()]
         showCropOverlay = `in`.readByte().toInt() != 0
         showProgressBar = `in`.readByte().toInt() != 0
         autoZoomEnabled = `in`.readByte().toInt() != 0
@@ -332,7 +332,7 @@ class CropImageOptions : Parcelable {
         outputRequestWidth = `in`.readInt()
         outputRequestHeight = `in`.readInt()
         outputRequestSizeOptions =
-            RequestSizeOptions.entries.toTypedArray().get(`in`.readInt())
+            RequestSizeOptions.values().get(`in`.readInt())
         noOutputImage = `in`.readByte().toInt() != 0
         initialCropWindowRectangle = `in`.readParcelable(Rect::class.java.classLoader)
         initialRotation = `in`.readInt()
